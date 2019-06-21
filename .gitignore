@@ -1,0 +1,50 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# python cache
+__pycache__
+
+# jupyter
+.ipynb_checkpoints
+
+# test
+Untitled*
+
+# data
+model
+prediction
+pickle
+result
+dict
+
+# ide
+.vscode
+.idea/
+.history
+
+# py compile file
+*.pyc
+*.pyo
+
+# venv
+venv
+
+# pkuseg
+pkuseg
+
+.DS_Store
+
+# Latex
+
+## Core latex/pdflatex auxiliary files:
+*.aux
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.cb2
+.*.lb
