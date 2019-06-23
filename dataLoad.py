@@ -2,7 +2,7 @@
 # @Author: v-huji
 # @Date:   2019-06-21 10:22:48
 # @Last Modified by:   gunjianpan
-# @Last Modified time: 2019-06-22 18:57:12
+# @Last Modified time: 2019-06-23 14:14:47
 
 import os
 
@@ -84,6 +84,7 @@ def read_cws_data(filePath: str) -> list:
                     temp_data.append((char, 'M'))
                 temp_data.append((word[-1], 'E'))
         dataLists.append(temp_data)
+        temp_data = []
     # end_time(version)
     return dataLists
 
