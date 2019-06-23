@@ -2,7 +2,7 @@
 # @Author: gunjianpan
 # @Date:   2019-06-22 16:55:08
 # @Last Modified by:   gunjianpan
-# @Last Modified time: 2019-06-23 16:52:40
+# @Last Modified time: 2019-06-23 16:57:54
 
 import param
 import numpy as np
@@ -197,9 +197,9 @@ class BiLSTMTrain(object):
                     if dev_macro_f1 > best_dev_acc:
                         test_p, test_r, test_macro_f1, predict = self.test_epoch(self.data_test, sess, 'Test')
                         best_dev_acc = dev_macro_f1
-                        log(f'{epoch}-{batch}|{train_p:.2f}|{train_r:.2f}|{train_macro_f1:.2f}|{dev_p:.2f}|{dev_r:.2f}|{dev_macro_f1:.2f}|{test_p:.2f}|{test_r:.2f}|{test_macro_f1:.2f}|')
+                        log(f'{time_str()}|{epoch}-{batch}|{train_p:.2f}|{train_r:.2f}|{train_macro_f1:.2f}|{dev_p:.2f}|{dev_r:.2f}|{dev_macro_f1:.2f}|{test_p:.2f}|{test_r:.2f}|{test_macro_f1:.2f}|')
                     else:
-                        log(f'{epoch}-{batch}|{train_p:.2f}|{train_r:.2f}|{train_macro_f1:.2f}|{dev_p:.2f}|{dev_r:.2f}|{dev_macro_f1:.2f}|')
+                        log(f'{time_str()}|{epoch}-{batch}|{train_p:.2f}|{train_r:.2f}|{train_macro_f1:.2f}|{dev_p:.2f}|{dev_r:.2f}|{dev_macro_f1:.2f}|')
 
                     echo(f'training loss={show_loss / display_batch}')
                     show_loss = 0.0
