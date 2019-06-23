@@ -10,7 +10,6 @@ __pycache__
 Untitled*
 
 # data
-model
 prediction
 pickle
 result
@@ -51,3 +50,4 @@ pkuseg
 
 # middle data
 data/pkl/
+checkpoint
