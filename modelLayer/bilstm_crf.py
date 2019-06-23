@@ -2,7 +2,7 @@
 # @Author: gunjianpan
 # @Date:   2019-06-22 16:55:08
 # @Last Modified by:   gunjianpan
-# @Last Modified time: 2019-06-23 15:50:49
+# @Last Modified time: 2019-06-23 16:52:40
 
 import param
 import numpy as np
@@ -19,10 +19,15 @@ sys.path.append(os.getcwd())
 
 def evaluation(y: List, y_predict: List, seq: List, types: str):
     # print(np.array(y).shape, np.array(y_predict).shape, seq.shape)
-    y = sum([list(jj[:seq[ii]]) for ii, jj in enumerate(y)], [])
-    y = [int(ii > 1) for ii in y]
-    y_predict = sum([list(jj[:seq[ii]]) for ii, jj in enumerate(y_predict)], [])
-    y_predict = [int(ii > 1) for ii in y_predict]
+    y_t, y_p_t = [], []
+    for ii, jj in enumerate(y):
+        y_t.extend(jj[:seq[ii]])
+    for ii, jj in enumerate(y_predict):
+        y_p_t.extend(jj[:seq[ii]])
+    # y = sum([list(jj[:seq[ii]]) for ii, jj in enumerate(y)], [])
+    y = [int(ii > 1) for ii in y_t]
+    # y_predict = sum([list(jj[:seq[ii]]) for ii, jj in enumerate(y_predict)], [])
+    y_predict = [int(ii > 1) for ii in y_p_t]
     change_idx, idx = [], -1
     for ii in seq:
         change_idx.append(ii + idx)
@@ -185,7 +190,8 @@ class BiLSTMTrain(object):
                 _loss, _ = sess.run(fetches, feed_dict)  
                 _losstotal += _loss
                 show_loss += _loss
-                if not (batch + 1) % display_batch and epoch:
+                # test_p, test_r, test_macro_f1, predict = self.test_epoch(self.data_test, sess, 'Test')
+                if not (batch + 1) % display_batch:
                     train_p, train_r, train_macro_f1, _ = self.test_epoch(self.data_train, sess, 'Train')
                     dev_p, dev_r, dev_macro_f1, _ = self.test_epoch(self.data_dev, sess, 'Dev')
                     if dev_macro_f1 > best_dev_acc:
@@ -202,15 +208,15 @@ class BiLSTMTrain(object):
             save_path = saver.save(sess, self.model.model_save_path, global_step=(epoch + 1))
             print('the save path is ', save_path)
             
-            train_p, train_r, train_macro_f1, _ = self.test_epoch(self.data_train, sess, 'Train')
-            dev_p, dev_r, dev_macro_f1, _ = self.test_epoch(self.data_dev, sess, 'Dev') 
+            # train_p, train_r, train_macro_f1, _ = self.test_epoch(self.data_train, sess, 'Train')
+            # dev_p, dev_r, dev_macro_f1, _ = self.test_epoch(self.data_dev, sess, 'Dev') 
             
-            if dev_macro_f1 > best_dev_acc:
-                test_p, test_r, test_macro_f1, predict = self.test_epoch(self.data_test, sess, 'Test')
-                log(f'{epoch}|{train_p:.2f}|{train_r:.2f}|{train_macro_f1:.2f}|{dev_p:.2f}|{dev_r:.2f}|{dev_macro_f1:.2f}|{test_p:.2f}|{test_r:.2f}|{test_macro_f1:.2f}|')
-                best_dev_acc = dev_macro_f1
-            else:
-                log(f'{epoch}|{train_p:.2f}|{train_r:.2f}|{train_macro_f1:.2f}|{dev_p:.2f}|{dev_r:.2f}|{dev_macro_f1:.2f}|')
+            # if dev_macro_f1 > best_dev_acc:
+            #     test_p, test_r, test_macro_f1, predict = self.test_epoch(self.data_test, sess, 'Test')
+            #     log(f'{epoch}|{train_p:.2f}|{train_r:.2f}|{train_macro_f1:.2f}|{dev_p:.2f}|{dev_r:.2f}|{dev_macro_f1:.2f}|{test_p:.2f}|{test_r:.2f}|{test_macro_f1:.2f}|')
+            #     best_dev_acc = dev_macro_f1
+            # else:
+            #     log(f'{epoch}|{train_p:.2f}|{train_r:.2f}|{train_macro_f1:.2f}|{dev_p:.2f}|{dev_r:.2f}|{dev_macro_f1:.2f}|')
 
             echo(1, f'Training {self.data_train[1].shape[0]}, loss={mean_loss:g} ')
             echo(2, f'Epoch training {self.data_train[1].shape[0]}, loss={mean_loss:g}, speed={time.time() - start_time:g} s/epoch')
@@ -290,7 +296,7 @@ class BiLSTMTrain(object):
 
         output_path = f'{param.RESULT_PATH(self.sa_type)}_{time_str()}.txt'
         
-        with open(output_path, 'w', encoding='utf-16') as f:
+        with open(output_path, 'w') as f:
             f.write('\n'.join(test_predict_text))
 
     def predict(self):
