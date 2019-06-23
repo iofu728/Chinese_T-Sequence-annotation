@@ -2,7 +2,7 @@
 # @Author: gunjianpan
 # @Date:   2019-06-22 16:55:08
 # @Last Modified by:   gunjianpan
-# @Last Modified time: 2019-06-23 16:57:54
+# @Last Modified time: 2019-06-23 17:02:50
 
 import param
 import numpy as np
@@ -18,15 +18,13 @@ sys.path.append(os.getcwd())
 
 
 def evaluation(y: List, y_predict: List, seq: List, types: str):
-    # print(np.array(y).shape, np.array(y_predict).shape, seq.shape)
+    ''' evaluation '''
     y_t, y_p_t = [], []
     for ii, jj in enumerate(y):
         y_t.extend(jj[:seq[ii]])
     for ii, jj in enumerate(y_predict):
         y_p_t.extend(jj[:seq[ii]])
-    # y = sum([list(jj[:seq[ii]]) for ii, jj in enumerate(y)], [])
     y = [int(ii > 1) for ii in y_t]
-    # y_predict = sum([list(jj[:seq[ii]]) for ii, jj in enumerate(y_predict)], [])
     y_predict = [int(ii > 1) for ii in y_p_t]
     change_idx, idx = [], -1
     for ii in seq:
@@ -38,8 +36,6 @@ def evaluation(y: List, y_predict: List, seq: List, types: str):
         except:
             echo(0, ii, len(y_predict))
 
-    # correct_labels = np.sum((y == y_predict) * mask)
-    # accuracy = 100.0 * correct_labels / float(total_label)
     p, r, macro_f1 = fastF1(y, y_predict)
     print(f"{types} P: {p:.2f}%, R: {r:.2f}%, Macro_f1: {macro_f1:.2f}%")
 
@@ -59,7 +55,6 @@ def fastF1(result, predict):
             last_result = ii
         if predict[ii]:
             last_predict = ii
-    # print(trueNum, precisionNum, recallNum)
     r = trueNum / recallNum if recallNum else 0
     p = trueNum / precisionNum if precisionNum else 0
     macro_f1 = (2 * p * r) / (p + r) if (p + r) else 0
@@ -190,7 +185,6 @@ class BiLSTMTrain(object):
                 _loss, _ = sess.run(fetches, feed_dict)  
                 _losstotal += _loss
                 show_loss += _loss
-                # test_p, test_r, test_macro_f1, predict = self.test_epoch(self.data_test, sess, 'Test')
                 if not (batch + 1) % display_batch:
                     train_p, train_r, train_macro_f1, _ = self.test_epoch(self.data_train, sess, 'Train')
                     dev_p, dev_r, dev_macro_f1, _ = self.test_epoch(self.data_dev, sess, 'Dev')
@@ -207,16 +201,6 @@ class BiLSTMTrain(object):
             
             save_path = saver.save(sess, self.model.model_save_path, global_step=(epoch + 1))
             print('the save path is ', save_path)
-            
-            # train_p, train_r, train_macro_f1, _ = self.test_epoch(self.data_train, sess, 'Train')
-            # dev_p, dev_r, dev_macro_f1, _ = self.test_epoch(self.data_dev, sess, 'Dev') 
-            
-            # if dev_macro_f1 > best_dev_acc:
-            #     test_p, test_r, test_macro_f1, predict = self.test_epoch(self.data_test, sess, 'Test')
-            #     log(f'{epoch}|{train_p:.2f}|{train_r:.2f}|{train_macro_f1:.2f}|{dev_p:.2f}|{dev_r:.2f}|{dev_macro_f1:.2f}|{test_p:.2f}|{test_r:.2f}|{test_macro_f1:.2f}|')
-            #     best_dev_acc = dev_macro_f1
-            # else:
-            #     log(f'{epoch}|{train_p:.2f}|{train_r:.2f}|{train_macro_f1:.2f}|{dev_p:.2f}|{dev_r:.2f}|{dev_macro_f1:.2f}|')
 
             echo(1, f'Training {self.data_train[1].shape[0]}, loss={mean_loss:g} ')
             echo(2, f'Epoch training {self.data_train[1].shape[0]}, loss={mean_loss:g}, speed={time.time() - start_time:g} s/epoch')
@@ -228,40 +212,30 @@ class BiLSTMTrain(object):
         return predict
 
     def test_epoch(self, dataset, sess, types:str):
-        echo(1, 22)
-        
+        ''' Test one epoch '''
         _batch_size = 128
         _y = dataset[1]
         data_size = _y.shape[0]
         batch_num = int(data_size / _batch_size) + 1
         predict = []
         fetches = [self.model.scores, self.model.length, self.model.transition_params]
-        echo(1, 11, batch_num)
+        echo(1, 'Test Batch Num:', batch_num)
 
         for i in range(batch_num):
-            # echo(1, 21)
             begin_index = i * _batch_size
-            # echo(1, 22)
             end_index = min((i + 1) * _batch_size, data_size)
-            # echo(1, 23)
             X_batch = dataset[0][begin_index:end_index]
-            # echo(1, 24, X_batch.shape)
             Y_batch = dataset[1][begin_index:end_index]
-            # echo(1, 25, Y_batch.shape)
             feed_dict = {self.model.X_inputs: X_batch,
                          self.model.y_inputs: Y_batch,
                          self.model.lr: 1e-5,
                          self.model.batch_size: _batch_size,
                          self.model.keep_prob: 1.0}
-            # echo(1, 26, feed_dict)
-            # echo(0, fetches)
             test_score, test_length, transition_params = sess.run(fetches=fetches, feed_dict=feed_dict)
-            # echo(0, np.array(test_score).shape)
 
             for tf_unary_scores_, y_, sequence_length_ in zip(test_score, Y_batch, test_length):
                 tf_unary_scores_ = tf_unary_scores_
                 viterbi_sequence, _ = tf.contrib.crf.viterbi_decode(tf_unary_scores_, transition_params)
-                # print(np.array(viterbi_sequence).shape)
                 predict.append(viterbi_sequence)
             if not (i + 1) % 100:
                 echo(0, i)
@@ -270,7 +244,7 @@ class BiLSTMTrain(object):
         if types == 'Test':
             pickle.dump(predict, open(f"{param.RESULT_PATH(self.sa_type)}.pkl", 'wb'))
             self.output_result(dataset, predict, types)
-        echo(1, 13, np.array(predict).shape)
+        echo(1, 'Predict Result shape:', np.array(predict).shape)
         p, r, macro_f1 = evaluation(_y, predict, dataset[2], types)
         return p, r, macro_f1, predict
 
