@@ -2,7 +2,7 @@
 # @Author: v-huji
 # @Date:   2019-06-21 10:24:51
 # @Last Modified by:   gunjianpan
-# @Last Modified time: 2019-06-23 14:49:40
+# @Last Modified time: 2019-06-23 17:51:48
 
 import os
 from enum import Enum
@@ -73,7 +73,7 @@ if not os.path.exists(LOG_DIR):
 
 
 def change_run_id(new_run_id: str):
-    global run_id, RESULT_DIR, LOG_PATH
+    global run_id, RESULT_DIR, LOG_PATH, CHECK_PATH, CHECK_DIR
     run_id = new_run_id
     RESULT_DIR = f'{RESULT_ROOT_DIR}{run_id}_{time_str()}/'
     os.mkdir(RESULT_DIR)
