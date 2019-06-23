@@ -2,7 +2,7 @@
 # @Author: gunjianpan
 # @Date:   2019-06-22 16:55:08
 # @Last Modified by:   gunjianpan
-# @Last Modified time: 2019-06-23 17:02:50
+# @Last Modified time: 2019-06-24 02:43:22
 
 import param
 import numpy as np
@@ -14,6 +14,7 @@ from numba import jit
 from typing import List
 from util import echo, time_str, log
 import sys, os
+from evaluation import evaluate_ner
 sys.path.append(os.getcwd())
 
 
@@ -41,6 +42,19 @@ def evaluation(y: List, y_predict: List, seq: List, types: str):
 
     return p, r, macro_f1
 
+def evaluation_ner(y: List, y_predict: List, seq: List, types: str):
+    ''' evaluation ner '''
+    y_t, y_p_t = [], []
+    for ii, jj in enumerate(y):
+        y_t.extend(jj[:seq[ii]])
+        y_t.append(-1)
+    for ii, jj in enumerate(y_predict):
+        y_p_t.extend(jj[:seq[ii]])
+        y_t.append(-1)
+    p, r, macro_f1, log_text = evaluate_ner(y_p_t, y_t)
+    print(f"{types} P: {p:.2f}%, R: {r:.2f}%, Macro_f1: {macro_f1:.2f}%, {log_text}")
+    return p, r, macro_f1, log_text
+    
 
 @jit
 def fastF1(result, predict):
@@ -186,14 +200,20 @@ class BiLSTMTrain(object):
                 _losstotal += _loss
                 show_loss += _loss
                 if not (batch + 1) % display_batch:
-                    train_p, train_r, train_macro_f1, _ = self.test_epoch(self.data_train, sess, 'Train')
-                    dev_p, dev_r, dev_macro_f1, _ = self.test_epoch(self.data_dev, sess, 'Dev')
+                    train_p, train_r, train_macro_f1, train_log = self.test_epoch(self.data_train, sess, 'Train')
+                    dev_p, dev_r, dev_macro_f1, dev_log = self.test_epoch(self.data_dev, sess, 'Dev')
                     if dev_macro_f1 > best_dev_acc:
                         test_p, test_r, test_macro_f1, predict = self.test_epoch(self.data_test, sess, 'Test')
                         best_dev_acc = dev_macro_f1
-                        log(f'{time_str()}|{epoch}-{batch}|{train_p:.2f}|{train_r:.2f}|{train_macro_f1:.2f}|{dev_p:.2f}|{dev_r:.2f}|{dev_macro_f1:.2f}|{test_p:.2f}|{test_r:.2f}|{test_macro_f1:.2f}|')
+                        if self.sa_type == param.SA_TYPE.CWS:
+                            log(f'{time_str()}|{epoch}-{batch}|{train_p:.2f}|{train_r:.2f}|{train_macro_f1:.2f}|{dev_p:.2f}|{dev_r:.2f}|{dev_macro_f1:.2f}|')
+                        else:
+                            log(f'{time_str()}|{epoch}-{batch}|{train_p:.2f}|{train_r:.2f}|{train_macro_f1:.2f}|{dev_p:.2f}|{dev_r:.2f}|{dev_macro_f1:.2f}| {train_log} | {dev_log}')
                     else:
-                        log(f'{time_str()}|{epoch}-{batch}|{train_p:.2f}|{train_r:.2f}|{train_macro_f1:.2f}|{dev_p:.2f}|{dev_r:.2f}|{dev_macro_f1:.2f}|')
+                        if self.sa_type == param.SA_TYPE.CWS:
+                            log(f'{time_str()}|{epoch}-{batch}|{train_p:.2f}|{train_r:.2f}|{train_macro_f1:.2f}|{dev_p:.2f}|{dev_r:.2f}|{dev_macro_f1:.2f}|')
+                        else:
+                            log(f'{time_str()}|{epoch}-{batch}|{train_p:.2f}|{train_r:.2f}|{train_macro_f1:.2f}|{dev_p:.2f}|{dev_r:.2f}|{dev_macro_f1:.2f}| {train_log} | {dev_log}')
 
                     echo(f'training loss={show_loss / display_batch}')
                     show_loss = 0.0
@@ -245,8 +265,12 @@ class BiLSTMTrain(object):
             pickle.dump(predict, open(f"{param.RESULT_PATH(self.sa_type)}.pkl", 'wb'))
             self.output_result(dataset, predict, types)
         echo(1, 'Predict Result shape:', np.array(predict).shape)
-        p, r, macro_f1 = evaluation(_y, predict, dataset[2], types)
-        return p, r, macro_f1, predict
+        if self.sa_type == param.SA_TYPE.CWS:
+            p, r, macro_f1 = evaluation(_y, predict, dataset[2], types)
+            return p, r, macro_f1, predict
+        else:
+            p, r, macro_f1, log_text = evaluation_ner(_y, predict, dataset[2], types)
+            return p, r, macro_f1, log_text
 
     def output_result(self, data_set:List, predict:List, types:str):
         ''' output result '''
@@ -265,7 +289,7 @@ class BiLSTMTrain(object):
             for ii in data_set[-1]:
                 temp_len = len(ii)
                 temp_tag = predict[idx: idx + temp_len]
-                temp_text = [f'{kk} {param.NER_LAB2ID[temp_tag[jj]]}' for jj, kk in enumerate(ii)]
+                temp_text = [f'{kk[0]} {param.NER_ID2LAB[temp_tag[jj]]}' for jj, kk in enumerate(ii)]
                 test_predict_text.extend([*temp_text, ''])
 
         output_path = f'{param.RESULT_PATH(self.sa_type)}_{time_str()}.txt'
@@ -295,10 +319,11 @@ def test_params(num_seq: int, num_word: int, word_size: int, num_tag: int):
 
 
 if __name__ == "__main__":
+    sa_type = param.SA_TYPE.NER
     num_seq = 10
     num_word = 20
     word_size = 3333
-    num_tag = 4
+    num_tag = 7 if sa_type == param.SA_TYPE.NER else 4
     data_train = test_params(num_seq, num_word, word_size, num_tag)
     data_dev = test_params(10, num_word, word_size, num_tag)
     data_test = test_params(10, num_word, word_size, num_tag)
@@ -310,7 +335,7 @@ if __name__ == "__main__":
                             model_save_path='./checkpoint/checkpoint', 
                             embed_size=256,  
                             hs=512)
-    train = BiLSTMTrain(data_train, data_dev, data_test, model, param.SA_TYPE.CWS)
+    train = BiLSTMTrain(data_train, data_dev, data_test, model, sa_type)
     train.train(100, 200, 5, 1)
     
     
