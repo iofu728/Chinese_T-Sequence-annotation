@@ -2,7 +2,7 @@
 # @Author: v-huji
 # @Date:   2019-06-21 10:24:27
 # @Last Modified by:   gunjianpan
-# @Last Modified time: 2019-06-22 18:56:43
+# @Last Modified time: 2019-06-22 23:02:48
 
 import os
 import pickle
@@ -58,7 +58,7 @@ def time_str(timestamp: int = -1, format: str = '%Y-%m-%d %H:%M:%S') -> str:
 
 def log(log_str: str):
     ''' log record '''
-    with open(param.log_path, 'a') as f:
+    with open(f'{param.LOG_PATH}', 'a') as f:
         f.write(f'{log_str}\n')
 
 
