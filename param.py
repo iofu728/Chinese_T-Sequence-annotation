@@ -2,7 +2,7 @@
 # @Author: v-huji
 # @Date:   2019-06-21 10:24:51
 # @Last Modified by:   gunjianpan
-# @Last Modified time: 2019-06-23 17:51:48
+# @Last Modified time: 2019-06-24 02:10:41
 
 import os
 from enum import Enum
@@ -38,14 +38,23 @@ CWS_LAB2ID = {
 }
 
 NER_LAB2ID = {
-    'B-PER': 0,
-    'N': 1,
+    'N': 0,
+    'B-LOC': 1,
     'I-LOC': 2,
     'B-ORG': 3,
-    'B-LOC': 4,
-    'I-PER': 5,
-    'I-ORG': 6
+    'I-ORG': 4,
+    'B-PER': 5,
+    'I-PER': 6
 }
+
+NER_TAG = {
+    0: '',
+    1: 'LOC',
+    2: 'ORG',
+    3: 'PER'
+}
+
+NER_ID2LAB = {jj: ii for ii, jj in NER_LAB2ID.items()}
 
 
 def ORIGIN_SET_PATH(train_type) -> dict:
