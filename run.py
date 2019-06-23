@@ -2,7 +2,7 @@
 # @Author: gunjianpan
 # @Date:   2019-06-22 23:39:03
 # @Last Modified by:   gunjianpan
-# @Last Modified time: 2019-06-22 23:46:44
+# @Last Modified time: 2019-06-24 02:37:38
 
 import param
 from util import echo
@@ -22,4 +22,4 @@ def main(sa_type: param.SA_TYPE, run_id: str):
 
 
 if __name__ == "__main__":
-    main(param.SA_TYPE.CWS, 'CWS_BILSTM_CRF')
+    main(param.SA_TYPE.NER, 'NER_BILSTM_CRF')
