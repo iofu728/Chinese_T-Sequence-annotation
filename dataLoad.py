@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: v-huji
 # @Date:   2019-06-21 10:22:48
-# @Last Modified by:   v-huji
-# @Last Modified time: 2019-06-24 14:15:22
+# @Last Modified by:   gunjianpan
+# @Last Modified time: 2019-06-24 19:46:39
 
 import os
 
@@ -48,13 +48,14 @@ def basic_prepare_data(sa_type: param.SA_TYPE, mode=None):
         dump_bigger(dev_set, param.PKL_SET_PATH('Dev')[types])
         dump_bigger(test_set, param.PKL_SET_PATH('Test')[types])
     else:
-        write_data(train_set, 'Train')
-        write_data(dev_set, 'Dev')
-        write_data(test_set, 'Test')
+        write_data(train_set, 'Train', sa_type)
+        write_data(dev_set, 'Dev', sa_type)
+        write_data(test_set, 'Test', sa_type)
 
 
-def write_data(data, types: str):
-    with open(f'{param.PKL_DIR}{types}_data.txt', 'w') as f:
+def write_data(data, types: str, sa_type: param.SA_TYPE):
+    SA_TYPE = 'CWS' if sa_type == param.SA_TYPE.CWS else 'NER'
+    with open(f'{param.PKL_DIR}{types}_data_{SA_TYPE}.txt', 'w') as f:
         for ii in data:
             f.write('\n'.join([f'{kk} {mm}' for kk, mm in ii]) + '\n\n')
 
