@@ -2,11 +2,18 @@
 # @Author: v-huji
 # @Date:   2019-06-21 10:24:51
 # @Last Modified by:   gunjianpan
-# @Last Modified time: 2019-06-24 02:10:41
+# @Last Modified time: 2019-06-24 22:50:04
 
 import os
+import time
 from enum import Enum
-from util import time_str
+
+
+def time_str(timestamp: int = -1, format: str = '%Y-%m-%d %H:%M:%S') -> str:
+    ''' time str '''
+    if timestamp > 0:
+        return time.strftime(format, time.localtime(timestamp))
+    return time.strftime(format, time.localtime(time.time()))
 
 
 class SA_TYPE(Enum):
