@@ -2,7 +2,7 @@
 # @Author: gunjianpan
 # @Date:   2019-06-24 22:33:33
 # @Last Modified by:   gunjianpan
-# @Last Modified time: 2019-06-24 22:59:07
+# @Last Modified time: 2019-06-25 00:56:33
 
 from __future__ import absolute_import
 from __future__ import division
@@ -21,6 +21,7 @@ import numpy as np
 from util import log, time_str
 import param
 import re
+from numba import jit
 FLAGS = flags.FLAGS
 
 ## Required parameters
@@ -205,17 +206,17 @@ class DataProcessor(object):
 class NerProcessor(DataProcessor):
     def get_train_examples(self, data_dir:str):
         return self._create_example(
-            self._read_data(os.path.join(data_dir, "Train_data_NER.txt")), "train"
+            self._read_data(os.path.join(data_dir, f"Train_data_{FLAGS.task_name}.txt")), "train"
         )
 
     def get_dev_examples(self, data_dir:str):
         return self._create_example(
-            self._read_data(os.path.join(data_dir, "Dev_data_NER.txt")), "dev"
+            self._read_data(os.path.join(data_dir, f"Dev_data_{FLAGS.task_name}.txt")), "dev"
         )
 
     def get_test_examples(self,data_dir:str, types:str):
         return self._create_example(
-            self._read_data(os.path.join(data_dir, f"{types}_data_NER.txt")), "test"
+            self._read_data(os.path.join(data_dir, f"{types}_data_{FLAGS.task_name}.txt")), "test"
         )
 
 
@@ -225,7 +226,10 @@ class NerProcessor(DataProcessor):
         "[PAD]" for padding
         :return:
         """
-        return ["[PAD]", "N", "B-PER", "I-PER", "B-ORG", "I-ORG", "B-LOC", "I-LOC", "[CLS]","[SEP]"]
+        if 'CWS' == FLAGS.task_name:
+            return ["[PAD]", "B", "M", "E", "S", "[CLS]","[SEP]"]
+        else:
+            return ["[PAD]", "N", "B-PER", "I-PER", "B-ORG", "I-ORG", "B-LOC", "I-LOC", "[CLS]","[SEP]"]
 
     def _create_example(self, lines, set_type):
         examples = []
@@ -256,7 +260,7 @@ def convert_single_example(ex_index, example, label_list, max_seq_length, tokeni
     #here start with zero this means that "[PAD]" is zero
     for (i,label) in enumerate(label_list):
         label_map[label] = i
-    with open(FLAGS.middle_output+"/label2id.pkl",'wb') as w:
+    with open(f"{FLAGS.middle_output}/{FLAGS.task_name}_label2id.pkl",'wb') as w:
         pickle.dump(label_map,w)
     textlist = example.text.split(' ')
     labellist = example.label.split(' ')
@@ -524,16 +528,44 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
 
 def _write_base(batch_tokens, id2label, prediction, batch_labels, wf, i, types:str):
     token = batch_tokens[i]
-    predict = id2label[prediction]
+    predict = prediction
     true_l = id2label[batch_labels[i]]
-    if token!="[PAD]" and token!="[CLS]" and true_l!="X":
-        if predict=="X" and not predict.startswith("##"):
-            predict="N"
-        if types == 'Test':
-            line = f"{token} {predict}\n"
+    if FLAGS.task_name == 'NER':
+        if token!="[PAD]" and token!="[CLS]" and true_l!="X":
+            if predict=="X" and not predict.startswith("##"):
+                predict="N"
+            if types == 'Test':
+                line = f"{token} {predict}\n"
+            else:
+                line = f"{token} {true_l} {predict}\n"
+            wf.write(line)
+    else:
+        if predict < 3:
+            wf.write(token)
+        elif predict < 5:
+            wf.write(f'{token} ')
         else:
-            line = f"{token} {true_l} {predict}\n"
-        wf.write(line)
+            wf.write(f'{token}\n')
+
+@jit
+def fastF1(result, predict):
+    ''' cws f1 score calculate '''
+    recallNum = sum(result)
+    precisionNum = sum(predict)
+    last_result, last_predict, trueNum = -1, -1, 0
+    for ii in range(len(result)):
+        if result[ii] and result[ii] == predict[ii] and last_predict == last_result:
+            trueNum += 1
+        if result[ii]:
+            last_result = ii
+        if predict[ii]:
+            last_predict = ii
+    r = trueNum / recallNum if recallNum else 0
+    p = trueNum / precisionNum if precisionNum else 0
+    macro_f1 = (2 * p * r) / (p + r) if (p + r) else 0
+
+    return p * 100, r * 100, macro_f1 * 100
+
 
 def conlleval(label_path, metric_path):
     """
@@ -564,7 +596,7 @@ def Writer(output_predict_file:str, result, batch_tokens, batch_labels, id2label
 
 def evaluation(processor, label_list, tokenizer, estimator, types:str):
     
-    with open(FLAGS.middle_output+'/label2id.pkl', 'rb') as rf:
+    with open(FLAGS.middle_output+'/cws_label2id.pkl', 'rb') as rf:
         label2id = pickle.load(rf)
         id2label = {value: key for key, value in label2id.items()}
 
@@ -586,13 +618,20 @@ def evaluation(processor, label_list, tokenizer, estimator, types:str):
         drop_remainder=False)
 
     result = estimator.predict(input_fn=predict_input_fn)
-    output_predict_file = f'{param.RESULT_PATH(param.SA_TYPE.NER)}_{time_str()}.txt'
-    metric_path = f'{param.RESULT_PATH(param.SA_TYPE.NER)}_metric_{time_str()}.txt'
+    output_predict_file = f'{param.RESULT_PATH(param.SA_TYPE.NER)}_{types}_{time_str()}.txt'
+    metric_path = f'{param.RESULT_PATH(param.SA_TYPE.NER)}_{types}_metric_{time_str()}.txt'
     #here if the tag is "X" means it belong to its before token, here for convenient evaluate use
     # conlleval.pl we  discarding it directly
     Writer(output_predict_file, result, batch_tokens, batch_labels, id2label, types)
     if types == 'Test':
         return
+    if FLAGS.task_name == 'CWS':
+        result = [int(ii < 3)  for ii in result]
+        batch_labels = [int(ii < 3)  for ii in batch_labels]
+        p, r, f1 = fastF1(batch_labels, result)
+        log(f'{time_str()}|{types}|{p}|{r}|{f1}')
+        return p, r, f1, _
+
     result = conlleval(output_predict_file, metric_path)
     acc, p, r, f1, result_text = 0, 0, 0, 0, ''
 
@@ -608,7 +647,7 @@ def evaluation(processor, label_list, tokenizer, estimator, types:str):
     return float(p), float(r), float(f1), result_text[:-1]
 
 def main(_):
-    param.change_run_id(FLAGS.task_name)
+    param.change_run_id(f'Bert_{FLAGS.task_name}')
     logging.set_verbosity(logging.INFO)
     processors = {"ner": NerProcessor}
     bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
@@ -682,8 +721,8 @@ def main(_):
         estimator.train(input_fn=train_input_fn, max_steps=num_train_steps)
 
     evaluation(processor, label_list, tokenizer, estimator, 'Test')
-    train_p, train_r, train_macro_f1, train_log = evaluation(processor, label_list, tokenizer, estimator, 'Train')
     dev_p, dev_r, dev_macro_f1, dev_log = evaluation(processor, label_list, tokenizer, estimator, 'Dev')
+    train_p, train_r, train_macro_f1, train_log = evaluation(processor, label_list, tokenizer, estimator, 'Train')
 
 if __name__ == "__main__":
     flags.mark_flag_as_required("data_dir")
