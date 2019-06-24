@@ -2,10 +2,10 @@
 # @Author: gunjianpan
 # @Date:   2019-06-24 22:47:56
 # @Last Modified by:   gunjianpan
-# @Last Modified time: 2019-06-24 22:56:39
+# @Last Modified time: 2019-06-25 00:57:16
 
 ipython3 BERT_SA.py -- \
-    --task_name="Bert_NER" \
+    --task_name="CWS" \
     --do_lower_case=False \
     --crf=True \
     --do_train=False \
