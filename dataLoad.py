@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: v-huji
 # @Date:   2019-06-21 10:22:48
-# @Last Modified by:   gunjianpan
-# @Last Modified time: 2019-06-23 14:14:47
+# @Last Modified by:   v-huji
+# @Last Modified time: 2019-06-24 14:15:22
 
 import os
 
@@ -25,17 +25,17 @@ def load_data(sa_type: param.SA_TYPE) -> list:
     return train, dev, test
 
 
-def prepare_data():
+def prepare_data(mode=None):
     ''' prepare data '''
     if not os.path.exists(param.PKL_DIR):
         echo(3, 'mkdiring data/pkl')
         os.makedirs(param.PKL_DIR)
 
-    basic_prepare_data(param.SA_TYPE.CWS)
-    basic_prepare_data(param.SA_TYPE.NER)
+    basic_prepare_data(param.SA_TYPE.CWS, mode)
+    basic_prepare_data(param.SA_TYPE.NER, mode)
 
 
-def basic_prepare_data(sa_type: param.SA_TYPE):
+def basic_prepare_data(sa_type: param.SA_TYPE, mode=None):
     ''' basic prepare data function '''
     read_function = read_cws_data if param.SA_TYPE.CWS == sa_type else read_ner_data
     types = 'CWS' if param.SA_TYPE.CWS == sa_type else 'NER'
@@ -43,9 +43,20 @@ def basic_prepare_data(sa_type: param.SA_TYPE):
     train_set = read_function(param.ORIGIN_SET_PATH('Train')[types])
     test_set = read_function(param.ORIGIN_SET_PATH('Test')[types])
     train_set, dev_set = train_test_split(train_set, test_size=0.3)
-    dump_bigger(train_set, param.PKL_SET_PATH('Train')[types])
-    dump_bigger(dev_set, param.PKL_SET_PATH('Dev')[types])
-    dump_bigger(test_set, param.PKL_SET_PATH('Test')[types])
+    if mode == None:
+        dump_bigger(train_set, param.PKL_SET_PATH('Train')[types])
+        dump_bigger(dev_set, param.PKL_SET_PATH('Dev')[types])
+        dump_bigger(test_set, param.PKL_SET_PATH('Test')[types])
+    else:
+        write_data(train_set, 'Train')
+        write_data(dev_set, 'Dev')
+        write_data(test_set, 'Test')
+
+
+def write_data(data, types: str):
+    with open(f'{param.PKL_DIR}{types}_data.txt', 'w') as f:
+        for ii in data:
+            f.write('\n'.join([f'{kk} {mm}' for kk, mm in ii]) + '\n\n')
 
 
 def read_ner_data(filePath: str) -> list:
@@ -97,4 +108,4 @@ def read_data(filePath: str) -> list:
 
 
 if __name__ == "__main__":
-    prepare_data()
+    prepare_data('TXT')
