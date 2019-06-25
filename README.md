@@ -5,6 +5,8 @@
 - BiLSTM + CRF(baseline)
 - Bert + CRF
 
+- [final paper](https://github.com/iofu728/Chinese_T-Sequence-annotation/blob/master/final_paper/main.pdf)
+
 ## Final result
 
 ### For CWS
@@ -48,8 +50,6 @@
 
 ### CWS
 
-#### Batch Size of BiLSTM + CRF in CWS
-
 ```json
 other param = {
     'Model' = 'BiLSTM CRF',
@@ -67,6 +67,8 @@ other param = {
 | 256        | 97.21   | 97.04   | 97.13    | 93.58 | 93.37 | 93.48     | 8.2        |
 | 512        | 98.36   | 98.42   | 98.39    | 93.70 | 93.82 | **93.76** | 12.0       |
 | 768        | 99.43   | 99.30   | 99.37    | 93.99 | 93.53 | **93.76** | 19.6       |
+
+![image](https://cdn.nlark.com/yuque/0/2019/png/104214/1561498478868-0e0937d8-97f8-49bb-9b20-2f89de61bb8f.png)
 
 #### Hyperparameter of BiLSTM + CRF in CWS
 
