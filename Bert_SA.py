@@ -1,161 +1,69 @@
 # -*- coding: utf-8 -*-
 # @Author: gunjianpan
 # @Date:   2019-06-24 22:33:33
-# @Last Modified by:   gunjianpan
-# @Last Modified time: 2019-06-25 00:56:33
+# @Last Modified by:   v-huji
+# @Last Modified time: 2019-06-25 13:36:02
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 import collections
 import os
 import pickle
-from absl import flags,logging
-from bert import modeling
-from bert import optimization
-from bert import tokenization
-import tensorflow as tf
+import re
+
 import metrics
 import numpy as np
-from util import log, time_str
 import param
-import re
+import tensorflow as tf
+from absl import flags, logging
+from bert import modeling, optimization, tokenization
 from numba import jit
-FLAGS = flags.FLAGS
+from util import log, time_str, dump_bigger
+
 
 ## Required parameters
-flags.DEFINE_string(
-    "data_dir", None,
-    "The input data dir. Should contain the .tsv files (or other data files) "
-    "for the task.")
-
-flags.DEFINE_string(
-    "bert_config_file", None,
-    "The config json file corresponding to the pre-trained BERT model. "
-    "This specifies the model architecture.")
-
-flags.DEFINE_string("task_name", None, "The name of the task to train.")
-
-flags.DEFINE_string("vocab_file", None,
-                    "The vocabulary file that the BERT model was trained on.")
-
-flags.DEFINE_string(
-    "output_dir", None,
-    "The output directory where the model checkpoints will be written.")
-
-## Other parameters
-
-flags.DEFINE_string(
-    "init_checkpoint", None,
-    "Initial checkpoint (usually from a pre-trained BERT model).")
-
-# if you download cased checkpoint you should use "False",if uncased you should use
-# "True"
-# if we used in bio-medical field，don't do lower case would be better!
-
-flags.DEFINE_bool(
-    "do_lower_case", True,
-    "Whether to lower case the input text. Should be True for uncased "
-    "models and False for cased models.")
-
-flags.DEFINE_integer(
-    "max_seq_length", 128,
-    "The maximum total input sequence length after WordPiece tokenization. "
-    "Sequences longer than this will be truncated, and sequences shorter "
-    "than this will be padded.")
-
-flags.DEFINE_bool("do_train", False, "Whether to run training.")
-
-flags.DEFINE_bool("do_eval", False, "Whether to run eval on the dev set.")
-
-flags.DEFINE_bool(
-    "do_predict", False,
-    "Whether to run the model in inference mode on the test set.")
-
-flags.DEFINE_integer("train_batch_size", 32, "Total batch size for training.")
-
-flags.DEFINE_integer("eval_batch_size", 8, "Total batch size for eval.")
-
-flags.DEFINE_integer("predict_batch_size", 8, "Total batch size for predict.")
-
-flags.DEFINE_float("learning_rate", 5e-5, "The initial learning rate for Adam.")
-
-flags.DEFINE_float("num_train_epochs", 3.0,
-                   "Total number of training epochs to perform.")
-
-flags.DEFINE_float(
-    "warmup_proportion", 0.1,
-    "Proportion of training to perform linear learning rate warmup for. "
-    "E.g., 0.1 = 10% of training.")
-
-flags.DEFINE_integer("save_checkpoints_steps", 1000,
-                     "How often to save the model checkpoint.")
-
-flags.DEFINE_integer("iterations_per_loop", 1000,
-                     "How many steps to make in each estimator call.")
-
-flags.DEFINE_bool("use_tpu", False, "Whether to use TPU or GPU/CPU.")
-
-flags.DEFINE_string(
-    "tpu_name", None,
-    "The Cloud TPU to use for training. This should be either the name "
-    "used when creating the Cloud TPU, or a grpc://ip.address.of.tpu:8470 "
-    "url.")
-
-flags.DEFINE_string(
-    "tpu_zone", None,
-    "[Optional] GCE zone where the Cloud TPU is located in. If not "
-    "specified, we will attempt to automatically detect the GCE project from "
-    "metadata.")
-
-flags.DEFINE_string(
-    "gcp_project", None,
-    "[Optional] Project name for the Cloud TPU-enabled project. If not "
-    "specified, we will attempt to automatically detect the GCE project from "
-    "metadata.")
-
-flags.DEFINE_string("master", None, "[Optional] TensorFlow master URL.")
-
-flags.DEFINE_integer(
-    "num_tpu_cores", 8,
-    "Only used if `use_tpu` is True. Total number of TPU cores to use.")
-
-flags.DEFINE_string("middle_output", "result", "Dir was used to store middle data!")
+flags.DEFINE_string("middle_output", "result", 'middle output dir')
 flags.DEFINE_string("crf", "True", "use crf!")
+flags.DEFINE_string("data_dir", None, 'data dir')
+flags.DEFINE_string("bert_config_file", None, 'configure')
+flags.DEFINE_string("task_name", None, 'task name')
+flags.DEFINE_string("vocab_file", None, 'vocab')
+flags.DEFINE_string("output_dir", None, 'output')
+flags.DEFINE_string("init_checkpoint", None, 'init ckpt')
+flags.DEFINE_bool("do_lower_case", True, 'do lower')
+flags.DEFINE_integer("max_seq_length", 128, 'max seq len')
+flags.DEFINE_bool("do_train", False, 'train?')
+flags.DEFINE_bool("do_eval", False, 'eval?')
+flags.DEFINE_bool("do_predict", False, 'predict?')
+
+flags.DEFINE_integer("train_batch_size", 32, 'train batch')
+flags.DEFINE_integer("eval_batch_size", 8, 'eval batch')
+flags.DEFINE_integer("predict_batch_size", 8, 'predict batch')
+flags.DEFINE_float("learning_rate", 2e-5, 'lr')
+flags.DEFINE_float("num_train_epochs", 3.0, 'train epoch')
+flags.DEFINE_float("warmup_proportion", 0.1, 'warmup precent')
+flags.DEFINE_integer("save_checkpoints_steps", 1000, 'ckpt save steps')
+flags.DEFINE_integer("iterations_per_loop", 1000, 'loop')
+
+# for tpu
+flags.DEFINE_bool("use_tpu", False, 'tpu?')
+flags.DEFINE_string("tpu_name", None, '!tpu')
+flags.DEFINE_string("tpu_zone", None, '!tpu')
+flags.DEFINE_string("gcp_project", None, '!tpu')
+flags.DEFINE_string("master", None, 'tpu cluster')
+flags.DEFINE_integer("num_tpu_cores", 8, 'tpu cores')
+
+FLAGS = flags.FLAGS
 
 class InputExample(object):
   """A single training/test example for simple sequence classification."""
-
   def __init__(self, guid, text, label=None):
-    """Constructs a InputExample.
-
-    Args:
-      guid: Unique id for the example.
-      text_a: string. The untokenized text of the first sequence. For single
-        sequence tasks, only this sequence must be specified.
-      label: (Optional) string. The label of the example. This should be
-        specified for train and dev examples, but not for test examples.
-    """
     self.guid = guid
     self.text = text
     self.label = label
 
-class PaddingInputExample(object):
-  """Fake example so the num input examples is a multiple of the batch size.
-
-  When running eval/predict on the TPU, we need to pad the number of examples
-  to be a multiple of the batch size, because the TPU requires a fixed batch
-  size. The alternative is to drop the last batch, which is bad because it means
-  the entire output data won't be generated.
-
-  We use this class instead of `None` because treating `None` as padding
-  battches could cause silent errors.
-  """
-
 class InputFeatures(object):
   """A single set of features of data."""
-
   def __init__(self,
                input_ids,
                mask,
@@ -170,7 +78,6 @@ class InputFeatures(object):
 
 class DataProcessor(object):
     """Base class for data converters for sequence classification data sets."""
-
     def get_train_examples(self, data_dir):
         """Gets a collection of `InputExample`s for the train set."""
         raise NotImplementedError()
@@ -184,13 +91,12 @@ class DataProcessor(object):
         raise NotImplementedError()
 
     @classmethod
-    def _read_data(cls,input_file):
+    def _read_data(cls, input_file: str):
         """Read a BIO data!"""
         with open(input_file, 'r') as f:
             rf = [ii.strip() for ii in f.readlines()]
 
         lines, words, labels = [], [], []
-
         for line in rf:
             if not len(line):
                 if not len(words):
@@ -204,34 +110,29 @@ class DataProcessor(object):
         return lines
 
 class NerProcessor(DataProcessor):
-    def get_train_examples(self, data_dir:str):
+    def get_train_examples(self, data_dir: str):
         return self._create_example(
             self._read_data(os.path.join(data_dir, f"Train_data_{FLAGS.task_name}.txt")), "train"
         )
 
-    def get_dev_examples(self, data_dir:str):
+    def get_dev_examples(self, data_dir: str):
         return self._create_example(
             self._read_data(os.path.join(data_dir, f"Dev_data_{FLAGS.task_name}.txt")), "dev"
         )
 
-    def get_test_examples(self,data_dir:str, types:str):
+    def get_test_examples(self,data_dir: str, types: str):
         return self._create_example(
             self._read_data(os.path.join(data_dir, f"{types}_data_{FLAGS.task_name}.txt")), "test"
         )
 
 
     def get_labels(self):
-        """
-        here "X" used to represent "##eer","##soo" and so on!
-        "[PAD]" for padding
-        :return:
-        """
         if 'CWS' == FLAGS.task_name:
             return ["[PAD]", "B", "M", "E", "S", "[CLS]","[SEP]"]
         else:
             return ["[PAD]", "N", "B-PER", "I-PER", "B-ORG", "I-ORG", "B-LOC", "I-LOC", "[CLS]","[SEP]"]
 
-    def _create_example(self, lines, set_type):
+    def _create_example(self, lines: list, set_type: str):
         examples = []
         for (i, line) in enumerate(lines):
             guid = "%s-%s" % (set_type, i)
@@ -241,7 +142,7 @@ class NerProcessor(DataProcessor):
         return examples
 
 
-def convert_single_example(ex_index, example, label_list, max_seq_length, tokenizer, mode):
+def convert_single_example(ex_index, example, label_list: list, max_seq_length: int, tokenizer, mode):
     """
     :param ex_index: example num
     :param example:
@@ -256,17 +157,15 @@ def convert_single_example(ex_index, example, label_list, max_seq_length, tokeni
     labels: [I-PER,I-PER,X,O,O,O,X]
 
     """
-    label_map = {}
+    label_map, tokens, labels = {}, [], []
     #here start with zero this means that "[PAD]" is zero
     for (i,label) in enumerate(label_list):
         label_map[label] = i
     with open(f"{FLAGS.middle_output}/{FLAGS.task_name}_label2id.pkl",'wb') as w:
         pickle.dump(label_map,w)
-    textlist = example.text.split(' ')
-    labellist = example.label.split(' ')
-    tokens = []
-    labels = []
-    for i,(word,label) in enumerate(zip(textlist,labellist)):
+    textlist = example.text.split()
+    labellist = example.label.split()
+    for i,(word, label) in enumerate(zip(textlist, labellist)):
         token = tokenizer.tokenize(word)
         tokens.extend(token)
         for i,_ in enumerate(token):
@@ -278,9 +177,7 @@ def convert_single_example(ex_index, example, label_list, max_seq_length, tokeni
     if len(tokens) >= max_seq_length - 1:
         tokens = tokens[0:(max_seq_length - 1)]
         labels = labels[0:(max_seq_length - 1)]
-    ntokens = []
-    segment_ids = []
-    label_ids = []
+    ntokens, segment_ids, label_ids = [], [], []
     ntokens.append("[CLS]")
     segment_ids.append(0)
     label_ids.append(label_map["[CLS]"])
@@ -308,8 +205,7 @@ def convert_single_example(ex_index, example, label_list, max_seq_length, tokeni
     if ex_index < 3:
         logging.info("*** Example ***")
         logging.info("guid: %s" % (example.guid))
-        logging.info("tokens: %s" % " ".join(
-            [tokenization.printable_text(x) for x in tokens]))
+        logging.info("tokens: %s" % " ".join([tokenization.printable_text(x) for x in tokens]))
         logging.info("input_ids: %s" % " ".join([str(x) for x in input_ids]))
         logging.info("input_mask: %s" % " ".join([str(x) for x in mask]))
         logging.info("segment_ids: %s" % " ".join([str(x) for x in segment_ids]))
@@ -323,7 +219,7 @@ def convert_single_example(ex_index, example, label_list, max_seq_length, tokeni
     # we need ntokens because if we do predict it can help us return to original token.
     return feature,ntokens,label_ids
 
-def filed_based_convert_examples_to_features(examples, label_list, max_seq_length, tokenizer, output_file,mode=None):
+def filed_based_convert_examples_to_features(examples, label_list: list, max_seq_length: int, tokenizer, output_file: str, mode=None):
     writer = tf.python_io.TFRecordWriter(output_file)
     batch_tokens = []
     batch_labels = []
@@ -334,9 +230,8 @@ def filed_based_convert_examples_to_features(examples, label_list, max_seq_lengt
         batch_tokens.extend(ntokens)
         batch_labels.extend(label_ids)
         def create_int_feature(values):
-            f = tf.train.Feature(int64_list=tf.train.Int64List(value=list(values)))
-            return f
-
+            return tf.train.Feature(int64_list=tf.train.Int64List(value=list(values)))
+            
         features = collections.OrderedDict()
         features["input_ids"] = create_int_feature(feature.input_ids)
         features["mask"] = create_int_feature(feature.mask)
@@ -348,7 +243,7 @@ def filed_based_convert_examples_to_features(examples, label_list, max_seq_lengt
     writer.close()
     return batch_tokens,batch_labels
 
-def file_based_input_fn_builder(input_file, seq_length, is_training, drop_remainder):
+def file_based_input_fn_builder(input_file, seq_length: int, is_training, drop_remainder):
     name_to_features = {
         "input_ids": tf.FixedLenFeature([seq_length], tf.int64),
         "mask": tf.FixedLenFeature([seq_length], tf.int64),
@@ -382,18 +277,17 @@ def file_based_input_fn_builder(input_file, seq_length, is_training, drop_remain
 # all above are related to data preprocess
 # Following i about the model
 
-def hidden2tag(hiddenlayer,numclass):
+def hidden2tag(hiddenlayer, numclass):
     linear = tf.keras.layers.Dense(numclass,activation=None)
     return linear(hiddenlayer)
 
-def crf_loss(logits,labels,mask,num_labels,mask2len):
+def crf_loss(logits, labels, mask, num_labels, mask2len):
     """
     :param logits:
     :param labels:
     :param mask2len:each sample's length
     :return:
     """
-    #TODO
     with tf.variable_scope("crf_loss"):
         trans = tf.get_variable(
                 "transition",
@@ -404,14 +298,14 @@ def crf_loss(logits,labels,mask,num_labels,mask2len):
     log_likelihood,transition = tf.contrib.crf.crf_log_likelihood(logits,labels,transition_params =trans ,sequence_lengths=mask2len)
     loss = tf.math.reduce_mean(-log_likelihood)
    
-    return loss,transition
+    return loss, transition
 
-def softmax_layer(logits,labels,num_labels,mask):
+def softmax_layer(logits, labels, num_labels, mask):
     logits = tf.reshape(logits, [-1, num_labels])
     labels = tf.reshape(labels, [-1])
-    mask = tf.cast(mask,dtype=tf.float32)
+    mask = tf.cast(mask, dtype=tf.float32)
     one_hot_labels = tf.one_hot(labels, depth=num_labels, dtype=tf.float32)
-    loss = tf.losses.softmax_cross_entropy(logits=logits,onehot_labels=one_hot_labels)
+    loss = tf.losses.softmax_cross_entropy(logits=logits, onehot_labels=one_hot_labels)
     loss *= tf.reshape(mask, [-1])
     loss = tf.reduce_sum(loss)
     total_size = tf.reduce_sum(mask)
@@ -427,11 +321,11 @@ def create_model(bert_config, is_training, input_ids, mask,
                  segment_ids, labels, num_labels, use_one_hot_embeddings):
     model = modeling.BertModel(
         config = bert_config,
-        is_training=is_training,
-        input_ids=input_ids,
-        input_mask=mask,
-        token_type_ids=segment_ids,
-        use_one_hot_embeddings=use_one_hot_embeddings
+        is_training = is_training,
+        input_ids = input_ids,
+        input_mask = mask,
+        token_type_ids = segment_ids,
+        use_one_hot_embeddings = use_one_hot_embeddings
         )
 
     output_layer = model.get_sequence_output()
@@ -475,7 +369,7 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
                                                             use_one_hot_embeddings)
         tvars = tf.trainable_variables()
         scaffold_fn = None
-        initialized_variable_names=None
+        initialized_variable_names = None
         if init_checkpoint:
             (assignment_map, initialized_variable_names) = modeling.get_assignment_map_from_checkpoint(tvars,init_checkpoint)
             tf.train.init_from_checkpoint(init_checkpoint, assignment_map)
@@ -540,6 +434,8 @@ def _write_base(batch_tokens, id2label, prediction, batch_labels, wf, i, types:s
                 line = f"{token} {true_l} {predict}\n"
             wf.write(line)
     else:
+        if token in ['[CLS]', '[PAD]', '[SEP]']:
+            return
         if predict < 3:
             wf.write(token)
         elif predict < 5:
@@ -628,9 +524,10 @@ def evaluation(processor, label_list, tokenizer, estimator, types:str):
     if FLAGS.task_name == 'CWS':
         result = [int(ii < 3)  for ii in result]
         batch_labels = [int(ii < 3)  for ii in batch_labels]
+        dump_bigger([batch_labels, result], f'{param.RESULT_PATH(param.SA_TYPE.NER)}test.pkl')
         p, r, f1 = fastF1(batch_labels, result)
         log(f'{time_str()}|{types}|{p}|{r}|{f1}')
-        return p, r, f1, _
+        return p, r, f1, 0
 
     result = conlleval(output_predict_file, metric_path)
     acc, p, r, f1, result_text = 0, 0, 0, 0, ''
@@ -720,7 +617,7 @@ def main(_):
             drop_remainder=True)
         estimator.train(input_fn=train_input_fn, max_steps=num_train_steps)
 
-    evaluation(processor, label_list, tokenizer, estimator, 'Test')
+    # evaluation(processor, label_list, tokenizer, estimator, 'Test')
     dev_p, dev_r, dev_macro_f1, dev_log = evaluation(processor, label_list, tokenizer, estimator, 'Dev')
     train_p, train_r, train_macro_f1, train_log = evaluation(processor, label_list, tokenizer, estimator, 'Train')
 
