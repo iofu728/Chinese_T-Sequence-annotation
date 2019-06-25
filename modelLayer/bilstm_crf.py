@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gunjianpan
 # @Date:   2019-06-22 16:55:08
-# @Last Modified by:   gunjianpan
-# @Last Modified time: 2019-06-24 02:43:22
+# @Last Modified by:   v-huji
+# @Last Modified time: 2019-06-25 11:27:49
 
 import param
 import numpy as np
@@ -180,6 +180,9 @@ class BiLSTMTrain(object):
         for epoch in range(max_max_epoch):
             print(f'------  \033[92m{epoch} epochs \033[0m -------') 
             _lr = 0.01 if epoch < max_epoch else 0.005
+            # !!! very import. The learning rate of CWS model & NER model not same
+            if self.sa_type == param.SA_TYPE.NER:
+                _lr /= 10 
             start_time = time.time()
             _losstotal, show_loss, best_dev_acc = 0.0, 0.0, -1
 
