@@ -492,7 +492,7 @@ def Writer(output_predict_file:str, result, batch_tokens, batch_labels, id2label
 
 def evaluation(processor, label_list, tokenizer, estimator, types:str):
     
-    with open(FLAGS.middle_output+'/cws_label2id.pkl', 'rb') as rf:
+    with open(f'{FLAGS.middle_output}/{FLAGS.task_name}_label2id.pkl', 'rb') as rf:
         label2id = pickle.load(rf)
         id2label = {value: key for key, value in label2id.items()}
 
