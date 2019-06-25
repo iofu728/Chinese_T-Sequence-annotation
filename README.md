@@ -3,8 +3,32 @@
 ## Design Idea
 
 - BiLSTM + CRF(baseline)
-- Bert
-- Bert + BiLSTM + CRF
+- Bert + CRF
+
+## Final result
+
+### For CWS
+
+| Model        | Train P | Train R | Train F1 | Dev P | Dev R | Dev F1    | Best Epoch   |
+| ------------ | ------- | ------- | -------- | ----- | ----- | --------- | ------------ |
+| BiLSTM + CRF | 98.36   | 98.42   | 98.39    | 93.70 | 93.82 | **93.76** | 12           |
+| Bert + CRF   | -       | -       | -        | 97.97 | 97.60 | **97.78** | 1(only test) |
+
+### For NER
+
+> Table 1 for P, R, F1 for common way
+
+| Model        | Train P | Train R | Train F1 | Dev P | Dev R | Dev F1    | Best Epoch |
+| ------------ | ------- | ------- | -------- | ----- | ----- | --------- | ---------- |
+| BiLSTM + CRF | 99.75   | 99.76   | 99.76    | 86.95 | 81.30 | **84.03** | 30         |
+| Bert + CRF   | -       | -       | -        | 96.62 | 97.23 | **96.92** | 3          |
+
+> Table 2 for domain performance
+
+| Model        | Train Acc | Loc P | Loc R | Loc F1 | Org P | Org R | Org F1 | Per P | Per R | Per F1 | Test Acc | Loc P | Loc R | Loc F1 | Org P | Org R | Org F1 | Per P | Per R | Per F1 |
+| ------------ | --------- | ----- | ----- | ------ | ----- | ----- | ------ | ----- | ----- | ------ | -------- | ----- | ----- | ------ | ----- | ----- | ------ | ----- | ----- | ------ |
+| BiLSTM + CRF | 99.98     | 99.81 | 99.84 | 99.83  | 99.68 | 99.73 | 99.70  | 99.67 | 99.64 | 99.65  | 97.84    | 87.62 | 85.33 | 86.46  | 83.46 | 70.94 | 76.69  | 87.99 | 80.68 | 84.17  |
+| Bert + CRF   | -         | -     | -     | -      | -     | -     | -      | -     | -     | -      | 99.70    | 98.18 | 98.44 | 98.31  | 93.42 | 95.56 | 94.48  | 98.27 | 98.84 | 98.55  |
 
 ## Data Distribution
 
@@ -31,7 +55,7 @@ other param = {
     'Model' = 'BiLSTM CRF',
     'Hidden Size' = 512,
     'Embed Size' = 256,
-    'learing rate' = 0.01
+    'learning rate' = 0.01
 }
 ```
 
@@ -44,13 +68,13 @@ other param = {
 | 512        | 98.36   | 98.42   | 98.39    | 93.70 | 93.82 | **93.76** | 12.0       |
 | 768        | 99.43   | 99.30   | 99.37    | 93.99 | 93.53 | **93.76** | 19.6       |
 
-#### Hyperparameters of BiLSTM + CRF in CWS
+#### Hyperparameter of BiLSTM + CRF in CWS
 
 ```json
 other param = {
     'Model' = 'BiLSTM CRF',
     'Batch Size' = 64,
-    'learing rate' = 0.01
+    'learning rate' = 0.01
 }
 ```
 
@@ -59,6 +83,20 @@ other param = {
 | 512         | 256        | 93.53   | 93.54   | 93.53    | 91.65 | 91.78 | 91.71     | 8.8        |
 | 512         | 512        | 91.81   | 91.92   | 91.86    | 90.38 | 90.56 | 90.47     | 3.8        |
 | 768         | 256        | 93.51   | 93.94   | 93.72    | 91.50 | 92.03 | **91.77** | 10.8       |
+
+#### Bert + CRF in CWS
+
+```json
+other param = {
+    'Model' = 'Bert CRF',
+    'Batch Size' = 32,
+    'learning rate' = 2e-5
+}
+```
+
+| Dev P | Dev R | Dev F1    |
+| ----- | ----- | --------- |
+| 97.97 | 97.60 | **97.78** |
 
 ### NER
 
@@ -69,7 +107,7 @@ other param = {
     'Model' = 'BiLSTM CRF',
     'Hidden Size' = 512,
     'Embed Size' = 256,
-    'learing rate' = 0.001
+    'learning rate' = 0.001
 }
 ```
 
@@ -82,7 +120,7 @@ other param = {
 | 512        | 94.75   | 92.12   | 93.42    | 83.54 | 78.14 | 80.75     | 36         |
 | 768        | 88.41   | 83.74   | 86.02    | 81.36 | 75.80 | 78.48     | 38         |
 
-> Table 2 for domain perfermance
+> Table 2 for domain performance
 
 | Batch Size | Train Acc | Loc P | Loc R | Loc F1 | Org P | Org R | Org F1 | Per P | Per R | Per F1 | Test Acc | Loc P | Loc R | Loc F1 | Org P | Org R | Org F1 | Per P | Per R | Per F1 |
 | ---------- | --------- | ----- | ----- | ------ | ----- | ----- | ------ | ----- | ----- | ------ | -------- | ----- | ----- | ------ | ----- | ----- | ------ | ----- | ----- | ------ |
@@ -91,13 +129,13 @@ other param = {
 | 512        | 99.31     | 94.25 | 93.26 | 93.75  | 94.67 | 86.68 | 90.50  | 95.89 | 94.09 | 94.98  | 97.54    | 84.38 | 82.73 | 83.55  | 81.56 | 66.35 | 73.17  | 82.94 | 77.44 | 80.10  |
 | 768        | 98.44     | 88.20 | 86.48 | 87.33  | 86.64 | 72.98 | 79.22  | 90.16 | 86.59 | 97.34  | 97.34    | 82.01 | 79.92 | 80.95  | 79.42 | 64.26 | 71.04  | 81.22 | 75.95 | 78.49  |
 
-#### Hyperparameters of BiLSTM + CRF in NER
+#### Hyperparameter of BiLSTM + CRF in NER
 
 ```json
 other param = {
     'Model' = 'BiLSTM CRF',
     'Batch Size' = 64,
-    'learing rate' = 0.001
+    'learning rate' = 0.001
 }
 ```
 
@@ -108,9 +146,25 @@ other param = {
 | 512         | 256        | 99.75   | 99.76   | 99.76    | 86.95 | 81.30 | 84.03     | 30         |
 | 300         | 300        | 99.00   | 97.76   | 98.38    | 87.38 | 81.10 | **84.13** | 25         |
 
-> Table 2 for domain perfermance
+> Table 2 for domain performance
 
 | Hidden Size | Embed Size | Train Acc | Loc P | Loc R | Loc F1 | Org P | Org R | Org F1 | Per P | Per R | Per F1 | Test Acc | Loc P | Loc R | Loc F1 | Org P | Org R | Org F1 | Per P | Per R | Per F1 |
 | ----------- | ---------- | --------- | ----- | ----- | ------ | ----- | ----- | ------ | ----- | ----- | ------ | -------- | ----- | ----- | ------ | ----- | ----- | ------ | ----- | ----- | ------ |
 | 512         | 256        | 99.98     | 99.81 | 99.84 | 99.83  | 99.68 | 99.73 | 99.70  | 99.67 | 99.64 | 99.65  | 97.84    | 87.62 | 85.33 | 86.46  | 83.46 | 70.94 | 76.69  | 87.99 | 80.68 | 84.17  |
 | 300         | 300        | 99.81     | 99.02 | 98.31 | 98.67  | 98.46 | 96.17 | 97.30  | 99.41 | 97.87 | 98.64  | 97.87    | 87.68 | 85.06 | 86.35  | 84.10 | 71.19 | 77.11  | 89.20 | 80.29 | 84.51  |
+
+#### Bert + CRF in NER
+
+```json
+other param = {
+    'Model' = 'Bert CRF',
+    'Batch Size' = 32,
+    'learning rate' = 2e-5
+}
+```
+
+| Epoch | Dev Acc | Dev P | Dev R | Dev F1    | Loc P | Loc R | Loc F1 | Org P | Org R | Org F1 | Per P | Per R | Per F1 |
+| ----- | ------- | ----- | ----- | --------- | ----- | ----- | ------ | ----- | ----- | ------ | ----- | ----- | ------ |
+| 1     | 99.63   | 95.28 | 96.42 | 95.85     | 97.53 | 97.83 | 97.68  | 89.99 | 93.85 | 91.88  | 97.49 | 98.62 | 98.05  |
+| 2     | 99.67   | 96.30 | 96.97 | 96.64     | 97.97 | 98.08 | 98.02  | 92.96 | 95.15 | 94.04  | 97.59 | 98.82 | 98.20  |
+| 3     | 99.70   | 96.62 | 97.23 | **96.92** | 98.18 | 98.44 | 98.31  | 93.42 | 95.56 | 94.48  | 98.27 | 98.84 | 98.55  |
