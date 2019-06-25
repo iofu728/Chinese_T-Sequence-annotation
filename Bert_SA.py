@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gunjianpan
 # @Date:   2019-06-24 22:33:33
-# @Last Modified by:   v-huji
-# @Last Modified time: 2019-06-25 13:36:02
+# @Last Modified by:   gunjianpan
+# @Last Modified time: 2019-06-25 23:06:07
 
 from __future__ import absolute_import, division, print_function
 
@@ -332,8 +332,7 @@ def create_model(bert_config, is_training, input_ids, mask,
     #output_layer shape is
     if is_training:
         output_layer = tf.keras.layers.Dropout(rate=0.1)(output_layer)
-    logits = hidden2tag(output_layer,num_labels)
-    # TODO test shape
+    logits = hidden2tag(output_layer, num_labels)
     logits = tf.reshape(logits,[-1,FLAGS.max_seq_length,num_labels])
     if FLAGS.crf:
         mask2len = tf.reduce_sum(mask,axis=1)
@@ -434,9 +433,11 @@ def _write_base(batch_tokens, id2label, prediction, batch_labels, wf, i, types:s
                 line = f"{token} {true_l} {predict}\n"
             wf.write(line)
     else:
-        if token in ['[CLS]', '[PAD]', '[SEP]']:
+        if token in ['PAD]', '[SEP]']:
             return
-        if predict < 3:
+        if token == '[CLS]':
+            wf.write('\n')
+        elif predict < 3:
             wf.write(token)
         elif predict < 5:
             wf.write(f'{token} ')
@@ -481,7 +482,7 @@ def Writer(output_predict_file:str, result, batch_tokens, batch_labels, id2label
     with open(output_predict_file,'w') as wf:
         if  FLAGS.crf:
             predictions  = []
-            for m,pred in enumerate(result):
+            for m, pred in enumerate(result):
                 predictions.extend(pred)
             for i,prediction in enumerate(predictions):
                 _write_base(batch_tokens,id2label,prediction,batch_labels,wf,i, types)
@@ -518,7 +519,7 @@ def evaluation(processor, label_list, tokenizer, estimator, types:str):
     metric_path = f'{param.RESULT_PATH(param.SA_TYPE.NER)}_{types}_metric_{time_str()}.txt'
     #here if the tag is "X" means it belong to its before token, here for convenient evaluate use
     # conlleval.pl we  discarding it directly
-    Writer(output_predict_file, result, batch_tokens, batch_labels, id2label, types)
+    Writer(output_predict_file, result.copy(), batch_tokens, batch_labels, id2label, types)
     if types == 'Test':
         return
     if FLAGS.task_name == 'CWS':
