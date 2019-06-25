@@ -78,7 +78,7 @@ During training, we maximize the log-probability of the correct tag sequence:
 \input{figures/best.tex}
 
 
-BERT is one of the key innovations in the recent progress of contextualized representation learning \cite{peters2018deep,howard2018universal,radford2018improving,devlin2018bert}.
+BERT is one of the key innovations in the recent progress of contextualized representation learning \cite{peters2018deep,howard2018universal,devlin2018bert}.
 The idea behind the progress is that even though the word embedding layer (in a typical neural network for NLP) is trained from large-scale corpora, training a wide variety of neural architectures that encode contextual representations only from the limited supervised data on end tasks is insufficient.
 Unlike ELMo \cite{peters2018deep} and ULMFiT \cite{howard2018universal} that are intended to provide additional features for a particular architecture that bears human's understanding of the end task, BERT adopts a fine-tuning approach that requires almost no specific architecture for each end task. This is desired as an intelligent agent should minimize the use of prior human knowledge in the model design. Instead, it should learn such knowledge from data. BERT has two parameter intensive settings: 
 
