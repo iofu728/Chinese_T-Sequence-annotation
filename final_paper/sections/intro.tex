@@ -1,0 +1,18 @@
+\section{Introduction}
+
+Sequence annotation is a typical task in Natural Language Processing (NLP) domain.
+For language sample, we only know the obverse state, we want to learn the best probability of the hidden state.
+This problem most time can't be Simplified as one-by-one classify the problem.
+And sequence annotation some have disparity positive-negative sample ratio.
+It means that a single classify mechanism can't work well in sequence annotation.
+If you can extract global info, we will learn a global optimize hidden state layer.
+For the traditional method, we can use the Hidden Markov Model(HMM), Conditional Random Fields(CRF), DNN to extract hidden state info from observing the result.
+But it only a probability maximize tool, It can't extract semantic info from superficial features. In the previous work, I test for single CRF Layer from the pre-train embed. But single CRF layer can't work well in sequence annotation. It means you must provide an info extract layer to struct semantic representation mechanism.
+
+
+In the last few years, deep learning techniques have significantly out-performed traditional methods in several NLP tasks,  and sequence annotation is no exception to this trend.
+Especially Bert published on last year. Two of the most popular deep learning techniques for sequence annotation are BiLSTM + CRF and Transform model like Bert + CRF.
+In this paper, we evaluation both two model.
+
+In this paper, I test for two sequence annotation method in Chinese traditional Corps for two specific work of sequence annotation(CWS, NER). Our first model base on a BiLSTM model, equipped with CRF loss function.
+The other model base on Bert which is a pre-training and fine-tuning model by the 12-layers transform.

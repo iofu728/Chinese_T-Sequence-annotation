@@ -1,0 +1,29 @@
+\section{Experiments}
+\label{sec:experiments}
+
+In this section, we experiment for two model(BiLSTM + CRF/Bert + CRF) for two sequence annotation problem in a chinese traditional corps.
+
+And I also analysis the corps distribution, It means we can't use single classify model to deal this problem.
+
+\subsection{BiLSTM CRF Batch Size}
+\label{sec:BiLSTM CRF Batch Size}
+
+In this experiment, I set the hidden dim size as 512, embed size as 256, the learning rate of cws is 0.01, the learning rate of NER is 0.001.
+And when the batch size has been increased, the f1 score in dev Set have been increased too in CWS problem. 
+But I find the rule have been reverse in NER problem. It may cause by the diff of learning rate. I thought the also show that cws is only a surface layer extract problem.
+
+\subsection{Some Hyper-Params}
+\label{sec:hyper params} 
+
+Except experiment batch size, I also test for hidden state size, Embed Size.
+And I find In CWS problem, The bigger Hidden State size may import train effect.
+And this also mean that the epoch to best is become large.
+
+\subsection{Bert}
+\label{sec:bert}
+
+Compare with pre-training Bert with fine-tune Bert, the score significantly Improve.
+The position embedding \& Transformer construction work well to obtain information in context.
+Bert result is very outstanding, In CWS problem, Bert Improve 4\% in dev set of f1. In Ner problem, Bert Improve 13\% point in Dev Set of offset.
+ 
+

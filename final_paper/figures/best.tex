@@ -1,0 +1,16 @@
+\begin{table*}[htbp!]
+    \centering
+    \begin{tabular}{lcccccccc}
+    \midrule
+    problem & Model & Train P   &Train R     & Train F1       & Dev P      & Dev R & Dev F1 &Best Epoch\\
+    \midrule
+    CWS& BiLSTM + CRF & 98.36   & 98.42   & 98.39    & 93.70 & 93.82 &  93.76 & 12           \\
+    CWS& Bert + CRF   & -       & -       & -        & 97.97 & 97.60 &  \bf97.78 & 1(only test) \\
+    NER& BiLSTM + CRF & 99.75   & 99.76   & 99.76    & 86.95 & 81.30 & 84.03 & 30         \\
+    NER& Bert + CRF   & -       & -       & -        & 96.62 & 97.23 & \bf96.92 & 3         \\     
+
+    \bottomrule
+    \end{tabular}
+\caption{Best Result in My Test Work (in \%)}
+\label{tab:batchSize}
+\end{table*}

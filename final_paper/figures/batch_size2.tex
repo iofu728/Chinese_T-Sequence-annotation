@@ -1,0 +1,16 @@
+\begin{table*}[htbp!]
+    \centering
+    \begin{tabular}{lccccccc}
+    \midrule
+    Batch Size  &  Train P          & Train R        & Train F1       & Dev P      & Dev R & Dev F1 &Best Epoch\\
+    \midrule
+    64         & 99.75   & 99.76   & 99.76    & 86.95 & 81.30 & \bf84.03  & 30         \\
+    256        & 97.75   & 96.59   & 97.17    & 84.56 & 79.27 & 81.83     & 33         \\
+    512        & 94.75   & 92.12   & 93.42    & 83.54 & 78.14 & 80.75     & 36         \\
+    768        & 88.41   & 83.74   & 86.02    & 81.36 & 75.80 & 78.48     & 38         \\
+
+    \bottomrule
+    \end{tabular}
+\caption{Comparison between different Batch Size of BiLSTM CRF Model in NER Problem on Chinese traditional Corps data (in \%)}
+\label{tab:batchSize2}
+\end{table*}

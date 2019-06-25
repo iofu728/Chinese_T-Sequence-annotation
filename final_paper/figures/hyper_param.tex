@@ -1,0 +1,18 @@
+\begin{table*}[htbp!]
+    \centering
+    \begin{tabular}{lccccccc}
+    \midrule
+    problem & Hidden Size  &  Embed Size  & Train P   &Train R     & Train F1       & Dev P      & Dev R & Dev F1 &Best Epoch\\
+    \midrule
+   
+    CWS& 512         & 256        & 93.53   & 93.54   & 93.53    & 91.65 & 91.78 & 91.71     & 8.8        \\
+    CWS& 512         & 512        & 91.81   & 91.92   & 91.86    & 90.38 & 90.56 & 90.47     & 3.8        \\
+    CWS& 768         & 256        & 93.51   & 93.94   & 93.72    & 91.50 & 92.03 & \bf91.77  & 10.8       \\
+    NER& 512         & 256        & 99.75   & 99.76   & 99.76    & 86.95 & 81.30 & 84.03     & 30         \\
+    NER& 300         & 300        & 99.00   & 97.76   & 98.38    & 87.38 & 81.10 & \bf84.13  & 25         \\
+
+    \bottomrule
+    \end{tabular}
+\caption{Comparison between different Hyper-params of BiLSTM CRF Model in CWS \& NER Problem on Chinese traditional Corps data (in \%)}
+\label{tab:batchSize}
+\end{table*}

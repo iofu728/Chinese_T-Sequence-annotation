@@ -1,0 +1,14 @@
+Sequence annotation is a typical task in semantic representation domain of Nature Language Process(NLP).
+Laster year, BiLSTM + CRF was the state of art (SOTA) model.
+But after Bert published, everything has been changed.
+In this paper, I do some experiment in a typical sequence annotation problem like word segments(CWS) and named entity recognition(NER) in Chinese traditional corps.
+In this experiment, I change some hyper-parameter like batch size, embed size, hidden dim to improve the BiLSTM CRF model.
+After parameter adjusting, I find the bigger batch size makes the best dev result in the Chinese segment problem, but the bigger batch size does bad work in named entity recognition problem.
+I think it cause by NER is deeper semantic info than word segment.
+It can side to confirm in the diff of learning rate that the learning rate of NER is one-tenth of the CWS's.
+And I also experiment in Bert CRF model.
+The evaluation shows that BiLSTM CRF Model work best(93.76\% F1 in dev) in 512 batch size, 512 hidden dim, 256 embed size, 0.01 learning rate in CWS problem.
+And in NER problem BiLSTM CRF model work best(84.03\% F1 in dev) in 64 batch size, 300 hidden dim, 300 embed size, 0.001 learning rate. The result of bert crf model is outstanding.
+In CWS 97.78\%F1 score, which has 4\% improved than BiLSTM CRF model.
+And In NER mode, I get  96.92\% f1 in dev, It's improved 13\% than the best BiLSTM CRF model.
+All code is available to the research community.\footnote{https://github.com/iofu728/Chinese_T-Sequence-annotation.}
