@@ -2,7 +2,7 @@
 # @Author: gunjianpan
 # @Date:   2019-06-24 22:33:33
 # @Last Modified by:   gunjianpan
-# @Last Modified time: 2019-06-25 23:06:07
+# @Last Modified time: 2019-06-27 14:10:44
 
 from __future__ import absolute_import, division, print_function
 
@@ -19,6 +19,7 @@ from absl import flags, logging
 from bert import modeling, optimization, tokenization
 from numba import jit
 from util import log, time_str, dump_bigger
+from dataLoad import prepare_data
 
 
 ## Required parameters
@@ -291,11 +292,11 @@ def crf_loss(logits, labels, mask, num_labels, mask2len):
     with tf.variable_scope("crf_loss"):
         trans = tf.get_variable(
                 "transition",
-                shape=[num_labels,num_labels],
+                shape=[num_labels, num_labels],
                 initializer=tf.contrib.layers.xavier_initializer()
         )
     
-    log_likelihood,transition = tf.contrib.crf.crf_log_likelihood(logits,labels,transition_params =trans ,sequence_lengths=mask2len)
+    log_likelihood,transition = tf.contrib.crf.crf_log_likelihood(logits, labels,transition_params=trans , sequence_lengths=mask2len)
     loss = tf.math.reduce_mean(-log_likelihood)
    
     return loss, transition
@@ -545,6 +546,8 @@ def evaluation(processor, label_list, tokenizer, estimator, types:str):
     return float(p), float(r), float(f1), result_text[:-1]
 
 def main(_):
+    if not os.path.exists(os.path.join(FLAGS.data_dir, f"Train_data_{FLAGS.task_name}.txt")):
+        prepare_data('TXT')
     param.change_run_id(f'Bert_{FLAGS.task_name}')
     logging.set_verbosity(logging.INFO)
     processors = {"ner": NerProcessor}
