@@ -2,15 +2,32 @@
 
 - [x] [final paper](https://github.com/iofu728/Chinese_T-Sequence-annotation/blob/master/final_paper/main.pdf)
 - [ ] final result
+- [x] bert + crf trained model - [Google Drive 1](https://drive.google.com/file/d/1YcYAdRhqIoGXD8hl70Tl8MsfnXrkCjfS/view), [Google Drive 2](https://drive.google.com/file/d/16h-vdLkq1Hmihgr4bejTSo6dhqhQAl4L/view), [BaiduYun(rjoa)](https://pan.baidu.com/s/1XgRUQI29l9-MpWbtbpxxXw)
 
 ## Design Idea
 
 - [x] BiLSTM + CRF(baseline)
 - [x] Bert + CRF
 
-## Final result
+## Model Structure
 
 ![ModelStructure](https://cdn.nlark.com/yuque/0/2019/png/104214/1561613165004-639f2a76-5816-4e66-891a-f1d264642c37.png)
+
+## SetUp
+
+```bash
+git clone https://github.com/iofu728/Chinese_T-Sequence-annotation
+cd Chinese_T-Sequence-annotation && git clone https://github.com/google-research/bert
+pip install -r requirement.txt --user
+
+## for BiLSTM + CRF
+python run.py
+
+## for Bert + CRF
+bash run_bert.sh
+```
+
+## Final result
 
 ### For CWS
 
@@ -175,3 +192,7 @@ other param = {
 | 1     | 99.63   | 95.28 | 96.42 | 95.85     | 97.53 | 97.83 | 97.68  | 89.99 | 93.85 | 91.88  | 97.49 | 98.62 | 98.05  |
 | 2     | 99.67   | 96.30 | 96.97 | 96.64     | 97.97 | 98.08 | 98.02  | 92.96 | 95.15 | 94.04  | 97.59 | 98.82 | 98.20  |
 | 3     | 99.70   | 96.62 | 97.23 | **96.92** | 98.18 | 98.44 | 98.31  | 93.42 | 95.56 | 94.48  | 98.27 | 98.84 | 98.55  |
+
+## License
+
+[MIT](https://github.com/iofu728/Chinese_T-Sequence-annotation/blob/master/LICENSE)
