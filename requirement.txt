@@ -2,4 +2,5 @@ numba
 numpy
 pickle
 sklearn
-torch
+tensorflow
+gdown
