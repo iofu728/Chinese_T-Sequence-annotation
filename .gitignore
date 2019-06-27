@@ -24,29 +24,35 @@ dict
 *.pyc
 *.pyo
 
-# venv
-venv
-
-# pkuseg
-pkuseg
-
 .DS_Store
 
 # Latex
 
 ## Core latex/pdflatex auxiliary files:
-*.aux
-*.lof
 *.log
-*.lot
+*.aux
+*.bbl
+*.blg
+*.tex.undo
+*.tex.bak
+*.~te
+*.$te
+*.DVX
+*.DDF
+*.synctex.gz
+*.synctex.gz(busy)
+*.fdb_latexmk
 *.fls
 *.out
 *.toc
-*.fmt
-*.fot
-*.cb
-*.cb2
-.*.lb
+*.lof
+*.lot
+*.idx
+*.ilg
+*.ind
+
+*.dvi
+*.ps
 
 # middle data
 data/pkl/
