@@ -1,12 +1,12 @@
 \section{Models}
 In this section, we describe the models used in this paper: BI-LSTM, CRF, and Bert. 
-% \begin{figure*}[t]
-%     \begin{center}
-%         \includegraphics[width=\textwidth]{figures/figure.pdf}
-%     \end{center}
-%     \caption{Two model in this paper, TextCNN \& Bert}
-%     \label{fig:model}
-% \end{figure*}
+\begin{figure*}[t]
+    \begin{center}
+        \includegraphics[width=\textwidth]{figures/model_struct.pdf}
+    \end{center}
+    \caption{Two model in this paper, BiLSTM + CRF \& Bert + CRF}
+    \label{fig:model}
+\end{figure*}
 
 
 \subsection{Bi-LSTM}
@@ -17,7 +17,6 @@ We use the following implementation:
 \\
 \begin{align*}
 \mathbf{i}_{t} &= \sigma(\mathbf{W}_{xi}\mathbf{x}_{t} + \mathbf{W}_{hi}\mathbf{h}_{t-1} + \mathbf{W}_{ci}\mathbf{c}_{t-1} + \mathbf{b}_{i})\\
-% \mathbf{f}_{t} &= \sigma(\mathbf{W}_{xf}\mathbf{x}_{t} + \mathbf{W}_{hf}\mathbf{h}_{t-1}+\mathbf{W}_{cf}\mathbf{c}_{t-1} + \mathbf{b}_{f})\\
 \mathbf{c}_{t} &= (1 - \mathbf{i}_{t})\odot\mathbf{c}_{t-1} +\\
 &\qquad \mathbf{i}_{t}\odot \tanh(\mathbf{W}_{xc}\mathbf{x}_{t} + \mathbf{W}_{hc}\mathbf{h}_{t-1} + \mathbf{b}_{c})\\
 \mathbf{o}_{t} &= \sigma(\mathbf{W}_{xo}\mathbf{x}_{t} + \mathbf{W}_{ho}\mathbf{h}_{t-1} + \mathbf{W}_{co}\mathbf{c}_{t} + \mathbf{b}_{o})\\
@@ -32,7 +31,23 @@ The representation of a word using this model is obtained by concatenating its l
 \subsection{CRF Tagging Models}
 \label{sec:crf}
 
-A very simple---but surprisingly effective---tagging model is to use the $\mathbf{h}_t$'s as features to make independent tagging decisions for each output $y_t$. Despite this model's success in simple problems like POS tagging, its independent classification decisions are limiting when there are strong dependencies across output labels. NER is one such task, since the ``grammar'' that characterizes interpretable sequences of tags imposes several hard constraints (e.g., I-PER cannot follow B-LOC; see \S\ref{IOBES} for details) that would be impossible to model with independence assumptions.
+\begin{figure*}[t]
+    \begin{center}
+        \includegraphics[width=\textwidth]{figures/batch.pdf}
+    \end{center}
+    \caption{Train Set \& Dev Set epoch \& F1 distribute in CWS problem}
+    \label{fig:batch}
+\end{figure*}
+
+\begin{figure*}[t]
+    \begin{center}
+        \includegraphics[width=\textwidth]{figures/batch2.pdf}
+    \end{center}
+    \caption{Train Set \& Dev Set epoch \& F1 distribute in NER problem}
+    \label{fig:batch2}
+\end{figure*}
+
+A very simple---but surprisingly effective---tagging model is to use the $\mathbf{h}_t$'s as features to make independent tagging decisions for each output $y_t$ ~\cite{ling2015finding}. Despite this model's success in simple problems like POS tagging, its independent classification decisions are limiting when there are strong dependencies across output labels. NER is one such task, since the ``grammar'' that characterizes interpretable sequences of tags imposes several hard constraints (e.g., I-PER cannot follow B-LOC;) that would be impossible to model with independence assumptions.
 
 Therefore, instead of modeling tagging decisions independently, we model them jointly using a conditional random field. For an input sentence
 $$\mathbf{X} = (\mathbf{x}_1, \mathbf{x}_2, \ldots, \mathbf{x}_n),$$
@@ -53,26 +68,9 @@ During training, we maximize the log-probability of the correct tag sequence:
 
 \subsection{Bert}
 
-
-\begin{figure*}[t]
-    \begin{center}
-        \includegraphics[width=\textwidth]{figures/batch.pdf}
-    \end{center}
-    \caption{Train Set & Dev Set epoch \& F1 distribute in CWS problem}
-    \label{fig:model}
-\end{figure*}
-\end{figure*}
-\begin{figure*}[t]
-    \begin{center}
-        \includegraphics[width=\textwidth]{figures/batch.pdf}
-    \end{center}
-    \caption{Train Set & Dev Set epoch \& F1 distribute in NER problem}
-    \label{fig:model}
-\end{figure*}
-\end{figure*}
 \input{figures/corps.tex}
 \input{figures/batch_size2.tex}
-\input{figures/corps.tex}
+\input{figures/batchSize.tex}
 \input{figures/hyper_param.tex}
 \input{figures/bert.tex}
 \input{figures/best.tex}
