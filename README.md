@@ -1,13 +1,16 @@
 # Chinese Traditional Sequence Annotation
 
+- [x] [final paper](https://github.com/iofu728/Chinese_T-Sequence-annotation/blob/master/final_paper/main.pdf)
+- [ ] final result
+
 ## Design Idea
 
-- BiLSTM + CRF(baseline)
-- Bert + CRF
-
-- [final paper](https://github.com/iofu728/Chinese_T-Sequence-annotation/blob/master/final_paper/main.pdf)
+- [x] BiLSTM + CRF(baseline)
+- [x] Bert + CRF
 
 ## Final result
+
+![ModelStructure](https://cdn.nlark.com/yuque/0/2019/png/104214/1561613165004-639f2a76-5816-4e66-891a-f1d264642c37.png)
 
 ### For CWS
 
@@ -68,7 +71,7 @@ other param = {
 | 512        | 98.36   | 98.42   | 98.39    | 93.70 | 93.82 | **93.76** | 12.0       |
 | 768        | 99.43   | 99.30   | 99.37    | 93.99 | 93.53 | **93.76** | 19.6       |
 
-![image](https://cdn.nlark.com/yuque/0/2019/png/104214/1561498478868-0e0937d8-97f8-49bb-9b20-2f89de61bb8f.png)
+![CWSBatchChart](https://cdn.nlark.com/yuque/0/2019/png/104214/1561498478868-0e0937d8-97f8-49bb-9b20-2f89de61bb8f.png)
 
 #### Hyperparameter of BiLSTM + CRF in CWS
 
@@ -130,6 +133,8 @@ other param = {
 | 256        | 99.72     | 97.57 | 97.08 | 97.33  | 97.21 | 93.82 | 95.48  | 98.57 | 97.78 | 98.17  | 97.61    | 85.75 | 83.40 | 84.56  | 81.62 | 68.27 | 74.35  | 83.92 | 78.94 | 81.35  |
 | 512        | 99.31     | 94.25 | 93.26 | 93.75  | 94.67 | 86.68 | 90.50  | 95.89 | 94.09 | 94.98  | 97.54    | 84.38 | 82.73 | 83.55  | 81.56 | 66.35 | 73.17  | 82.94 | 77.44 | 80.10  |
 | 768        | 98.44     | 88.20 | 86.48 | 87.33  | 86.64 | 72.98 | 79.22  | 90.16 | 86.59 | 97.34  | 97.34    | 82.01 | 79.92 | 80.95  | 79.42 | 64.26 | 71.04  | 81.22 | 75.95 | 78.49  |
+
+![NERBatchChart](https://cdn.nlark.com/yuque/0/2019/png/104214/1561513101185-4a8c6ff1-0eb7-4ae5-93c8-c67c7542f08e.png)
 
 #### Hyperparameter of BiLSTM + CRF in NER
 
