@@ -1,7 +1,7 @@
 # Chinese Traditional Sequence Annotation
 
 - [x] [final paper](https://github.com/iofu728/Chinese_T-Sequence-annotation/blob/master/final_paper/main.pdf)
-- [ ] final result
+- [x] [final result](https://github.com/iofu728/Chinese_T-Sequence-annotation/tree/master/public_result)
 - [x] bert + crf trained model - [Google Drive 1](https://drive.google.com/file/d/1YcYAdRhqIoGXD8hl70Tl8MsfnXrkCjfS/view), [Google Drive 2](https://drive.google.com/file/d/16h-vdLkq1Hmihgr4bejTSo6dhqhQAl4L/view), [BaiduYun(rjoa)](https://pan.baidu.com/s/1XgRUQI29l9-MpWbtbpxxXw)
 
 ## Design Idea
