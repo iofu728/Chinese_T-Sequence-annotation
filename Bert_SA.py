@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gunjianpan
 # @Date:   2019-06-24 22:33:33
-# @Last Modified by:   gunjianpan
-# @Last Modified time: 2019-06-27 14:10:44
+# @Last Modified by:   v-huji
+# @Last Modified time: 2019-08-07 16:08:42
 
 from __future__ import absolute_import, division, print_function
 
@@ -108,30 +108,30 @@ class DataProcessor(object):
                 word, label = line.split()
                 words.append(word)
                 labels.append(label)
+        if len(words):
+            lines.append((' '.join(labels), ' '.join(words)))
         return lines
 
 class NerProcessor(DataProcessor):
     def get_train_examples(self, data_dir: str):
-        return self._create_example(
-            self._read_data(os.path.join(data_dir, f"Train_data_{FLAGS.task_name}.txt")), "train"
-        )
+        return self.load_example(data_dir, 'Train')
 
     def get_dev_examples(self, data_dir: str):
-        return self._create_example(
-            self._read_data(os.path.join(data_dir, f"Dev_data_{FLAGS.task_name}.txt")), "dev"
-        )
+        return self.load_example(data_dir, 'Dev')
 
-    def get_test_examples(self,data_dir: str, types: str):
-        return self._create_example(
-            self._read_data(os.path.join(data_dir, f"{types}_data_{FLAGS.task_name}.txt")), "test"
-        )
+    def get_test_examples(self, data_dir: str, types: str):
+        return self.load_example(data_dir, types)
 
+    def load_example(self, data_dir: str, types: str):
+        return self._create_example(
+           self._read_data(os.path.join(data_dir, f"{types}_data_{FLAGS.task_name}.txt")), types.lower()
+        )
 
     def get_labels(self):
+        basic_patten = ["[PAD]", "[CLS]", "[SEP]", 'X']
         if 'CWS' == FLAGS.task_name:
-            return ["[PAD]", "B", "M", "E", "S", "[CLS]","[SEP]"]
-        else:
-            return ["[PAD]", "N", "B-PER", "I-PER", "B-ORG", "I-ORG", "B-LOC", "I-LOC", "[CLS]","[SEP]"]
+            return basic_patten + ["B", "M", "E", "S"]
+        return basic_patten + ["N", "B-PER", "I-PER", "B-ORG", "I-ORG", "B-LOC", "I-LOC"]
 
     def _create_example(self, lines: list, set_type: str):
         examples = []
@@ -158,19 +158,16 @@ def convert_single_example(ex_index, example, label_list: list, max_seq_length: 
     labels: [I-PER,I-PER,X,O,O,O,X]
 
     """
-    label_map, tokens, labels = {}, [], []
+    tokens, labels = [], []
     #here start with zero this means that "[PAD]" is zero
-    for (i,label) in enumerate(label_list):
-        label_map[label] = i
-    with open(f"{FLAGS.middle_output}/{FLAGS.task_name}_label2id.pkl",'wb') as w:
-        pickle.dump(label_map,w)
+    label_map = {label: ii for ii, label in enumerate(label_list)}
     textlist = example.text.split()
     labellist = example.label.split()
     for i,(word, label) in enumerate(zip(textlist, labellist)):
         token = tokenizer.tokenize(word)
         tokens.extend(token)
-        for i,_ in enumerate(token):
-            if i==0:
+        for i, _ in enumerate(token):
+            if not i:
                 labels.append(label)
             else:
                 labels.append("X")
@@ -190,7 +187,7 @@ def convert_single_example(ex_index, example, label_list: list, max_seq_length: 
     # stop tag, because i think its not very necessary.
     # or if add "[SEP]" the model even will cause problem, special the crf layer was used.
     input_ids = tokenizer.convert_tokens_to_ids(ntokens)
-    mask = [1]*len(input_ids)
+    mask = [1] * len(input_ids)
     #use zero to padding and you should
     while len(input_ids) < max_seq_length:
         input_ids.append(0)
@@ -218,21 +215,21 @@ def convert_single_example(ex_index, example, label_list: list, max_seq_length: 
         label_ids=label_ids,
     )
     # we need ntokens because if we do predict it can help us return to original token.
-    return feature,ntokens,label_ids
+    return feature, ntokens, label_ids
 
-def filed_based_convert_examples_to_features(examples, label_list: list, max_seq_length: int, tokenizer, output_file: str, mode=None):
+def filed_based_convert_examples_to_features(examples: list, label_list: list, max_seq_length: int, tokenizer, output_file: str, mode=None):
     writer = tf.python_io.TFRecordWriter(output_file)
-    batch_tokens = []
-    batch_labels = []
+    batch_tokens, batch_labels = [], []
     for (ex_index, example) in enumerate(examples):
         if ex_index % 5000 == 0:
             logging.info("Writing example %d of %d" % (ex_index, len(examples)))
         feature,ntokens,label_ids = convert_single_example(ex_index, example, label_list, max_seq_length, tokenizer, mode)
         batch_tokens.extend(ntokens)
         batch_labels.extend(label_ids)
+
         def create_int_feature(values):
             return tf.train.Feature(int64_list=tf.train.Int64List(value=list(values)))
-            
+       
         features = collections.OrderedDict()
         features["input_ids"] = create_int_feature(feature.input_ids)
         features["mask"] = create_int_feature(feature.mask)
@@ -250,8 +247,8 @@ def file_based_input_fn_builder(input_file, seq_length: int, is_training, drop_r
         "mask": tf.FixedLenFeature([seq_length], tf.int64),
         "segment_ids": tf.FixedLenFeature([seq_length], tf.int64),
         "label_ids": tf.FixedLenFeature([seq_length], tf.int64),
-
     }
+
     def _decode_record(record, name_to_features):
         example = tf.parse_single_example(record, name_to_features)
         for name in list(example.keys()):
@@ -419,32 +416,6 @@ def model_fn_builder(bert_config, num_labels, init_checkpoint, learning_rate,
 
     return model_fn
 
-
-def _write_base(batch_tokens, id2label, prediction, batch_labels, wf, i, types:str):
-    token = batch_tokens[i]
-    predict = prediction
-    true_l = id2label[batch_labels[i]]
-    if FLAGS.task_name == 'NER':
-        if token!="[PAD]" and token!="[CLS]" and true_l!="X":
-            if predict=="X" and not predict.startswith("##"):
-                predict="N"
-            if types == 'Test':
-                line = f"{token} {predict}\n"
-            else:
-                line = f"{token} {true_l} {predict}\n"
-            wf.write(line)
-    else:
-        if token in ['PAD]', '[SEP]']:
-            return
-        if token == '[CLS]':
-            wf.write('\n')
-        elif predict < 3:
-            wf.write(token)
-        elif predict < 5:
-            wf.write(f'{token} ')
-        else:
-            wf.write(f'{token}\n')
-
 @jit
 def fastF1(result, predict):
     ''' cws f1 score calculate '''
@@ -465,38 +436,73 @@ def fastF1(result, predict):
     return p * 100, r * 100, macro_f1 * 100
 
 
-def conlleval(label_path, metric_path):
-    """
-
-    :param label_predict:
-    :param label_path:
-    :param metric_path:
-    :return:
-    """
-    eval_perl = "./conlleval_rev.pl"
+def conlleval(label_path: str, metric_path: str, types: str):
+    eval_perl = "./conlleval.pl"
     os.system("perl {} < {} > {}".format(eval_perl, label_path, metric_path))
     with open(metric_path) as fr:
         metrics = [line.strip() for line in fr]
-    return metrics
+    acc, p, r, f1, result_text, result_map = 0, 0, 0, 0, '', {}
 
-def Writer(output_predict_file:str, result, batch_tokens, batch_labels, id2label, types:str):
-    with open(output_predict_file,'w') as wf:
-        if  FLAGS.crf:
-            predictions  = []
-            for m, pred in enumerate(result):
-                predictions.extend(pred)
-            for i,prediction in enumerate(predictions):
-                _write_base(batch_tokens,id2label,prediction,batch_labels,wf,i, types)
-                
+    for ii, kk in enumerate(metrics):
+        print(kk)
+        if ii > 1:
+            temp_label = kk.split(':', 1)[0]
+            if temp_label == '':
+                continue
+            tp, tr, tf1 = re.findall('(\d{1,2}\.\d{2})%', kk)
+            result_map[temp_label] = f'{tp}|{tr}|{tf1}|'
+        elif ii == 1:
+            acc, p, r, f1 = re.findall('(\d{1,2}\.\d{2})%', kk)
+            result_text = f'{acc}|'
+    result_label = sorted(result_map.keys())
+    result_text += ''.join([result_map[ii] for ii in result_label])
+    log(len(result_label), '|'.join(result_label))
+    log(f'{time_str()}|{types}|{p}|{r}|{f1}|{result_text}')
+    return float(p), float(r), float(f1), result_text[:-1]
+
+def Writer(predict_path: str, result: list, batch_tokens: list, batch_labels: list, id2label: dict, types: str):
+    if FLAGS.crf:
+        result = [kk for ii in result for kk in ii]
+    write_result, last_token = [], ''
+
+    for ii, predict in enumerate(result):
+        token = batch_tokens[ii]
+        predict = id2label[predict]
+        true_l = id2label[batch_labels[ii]]
+        # write_result.append('{} {} {}'.format(token, true_l, predict))
+        if FLAGS.task_name == 'NER':
+            if token == "[PAD]":
+                if last_token != token:
+                    write_result.append('')
+            elif token != '[CLS]':
+                if true_l == 'X':
+                    x_token, x_label = write_result[-1].split(' ', 1)
+                    write_result[-1] = '{}{} {}'.format(x_token,
+                                                        token.replace('##', '', 1), x_label)
+                else:
+                    if predict == 'X':
+                        predict = 'O'
+                    write_result.append('{} {} {}'.format(token, true_l, predict))
+            last_token = token
         else:
-            for i,prediction in enumerate(result):
-                _write_base(batch_tokens,id2label,prediction,batch_labels,wf,i, types)
+            if token in ['PAD]', '[SEP]']:
+                continue
+            if token == '[CLS]':
+                write_result.append('')
+            elif predict < 3:
+                write_result[-1] += token
+            elif predict < 5:
+                write_result[-1] += '{} '.format(token)
+            else:
+                write_result[-1] += '{} '.format(token)
+                write_result.append('')
 
-def evaluation(processor, label_list, tokenizer, estimator, types:str):
-    
-    with open(f'{FLAGS.middle_output}/{FLAGS.task_name}_label2id.pkl', 'rb') as rf:
-        label2id = pickle.load(rf)
-        id2label = {value: key for key, value in label2id.items()}
+    with open(predict_path, 'w', newline='\n') as f:
+        f.write('\n'.join(write_result))
+
+def evaluation(processor, label_list: list, tokenizer, estimator, types:str):
+    label2id = {label:ii for ii, label in enumerate(label_list)}
+    id2label = {value: key for key, value in label2id.items()}
 
     predict_examples = processor.get_test_examples(FLAGS.data_dir, types)
 
@@ -516,11 +522,11 @@ def evaluation(processor, label_list, tokenizer, estimator, types:str):
         drop_remainder=False)
 
     result = estimator.predict(input_fn=predict_input_fn)
-    output_predict_file = f'{param.RESULT_PATH(param.SA_TYPE.NER)}_{types}_{time_str()}.txt'
+    predict_path = f'{param.RESULT_PATH(param.SA_TYPE.NER)}_{types}_{time_str()}.txt'
     metric_path = f'{param.RESULT_PATH(param.SA_TYPE.NER)}_{types}_metric_{time_str()}.txt'
     #here if the tag is "X" means it belong to its before token, here for convenient evaluate use
     # conlleval.pl we  discarding it directly
-    Writer(output_predict_file, result.copy(), batch_tokens, batch_labels, id2label, types)
+    Writer(predict_path, result, batch_tokens, batch_labels, id2label, types)
     if types == 'Test':
         return
     if FLAGS.task_name == 'CWS':
@@ -531,19 +537,7 @@ def evaluation(processor, label_list, tokenizer, estimator, types:str):
         log(f'{time_str()}|{types}|{p}|{r}|{f1}')
         return p, r, f1, 0
 
-    result = conlleval(output_predict_file, metric_path)
-    acc, p, r, f1, result_text = 0, 0, 0, 0, ''
-
-    for ii, kk in enumerate(result):
-        print(kk)
-        if ii > 1:
-            tp, tr, tf1 = re.findall('(\d{1,2}\.\d{2})%', kk)
-            result_text += f'{tp}|{tr}|{tf1}|'
-        elif ii == 1:
-            acc, p, r, f1 = re.findall('(\d{1,2}\.\d{2})%', kk)
-            result_text = f'{acc}|'
-    log(f'{time_str()}|{types}|{p}|{r}|{f1}|{result_text}')
-    return float(p), float(r), float(f1), result_text[:-1]
+    return conlleval(predict_path, metric_path, types)
 
 def main(_):
     if not os.path.exists(os.path.join(FLAGS.data_dir, f"Train_data_{FLAGS.task_name}.txt")):
